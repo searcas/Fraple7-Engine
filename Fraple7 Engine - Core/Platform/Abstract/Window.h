@@ -1,8 +1,5 @@
 #pragma once
-#include "../../pch.h"
-
-
-
+#include <string>
 
 namespace Fraple7
 {

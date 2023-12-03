@@ -8,6 +8,9 @@
 #define PCH_H
 #include <string>
 #include <iostream>
+#include <ranges>
+#include <format>
+
 // add headers that you want to pre-compile here
 #include "framework.h"
 

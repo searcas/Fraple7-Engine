@@ -21,6 +21,10 @@ namespace Fraple7
 		void WinWindow::Initialize()
 		{
 		}
+		HWND WinWindow::GetHandle()
+		{
+			return HWND();
+		}
 	}
 }
 

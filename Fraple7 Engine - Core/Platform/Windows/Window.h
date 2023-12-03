@@ -1,7 +1,6 @@
 #pragma once
-
 #include "../Abstract/Window.h"
-
+#include <Windows.h>
 
 namespace Fraple7
 {
@@ -13,8 +12,7 @@ namespace Fraple7
 			WinWindow(uint32_t width, uint32_t height, std::string&& name);
 			~WinWindow();
 			void Initialize() override;
-
-
+			static HWND GetHandle();
 		private:
 
 		};
