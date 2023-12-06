@@ -8,5 +8,6 @@ namespace Fraple7
 		virtual uint32_t Destroy() = 0;
 		virtual uint32_t SwapChain() = 0;
 		virtual uint32_t RenderTargetView() = 0;
+		virtual uint32_t Commands() = 0;
 	};
 }

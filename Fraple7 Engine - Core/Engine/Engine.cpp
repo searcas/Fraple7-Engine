@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "Engine.h"
-#include <d3d12.h>
+#include "directx/d3dx12.h"
 #include <wrl.h>
 #include <Utilities/Common/Common.h>
-#include "Graphics/3D Renderer/API/DirectX-12/PipeLineDx.h"
-#include "Platform/Abstract/Window.h"
+#include "Graphics/3D Renderer/Renderer/Renderer.h"
+#include "Studio/Platform/Abstract/Window.h"
 
 namespace Fraple7
 {
@@ -19,11 +19,12 @@ namespace Fraple7
 		}
 		int Engine::Active()
 		{
-			PipeLineDx swapChain(m_Window, 2);
+			Renderer renderer(m_Window);
 			
-			while (false)
-			{
 
+			while (m_Window.Running())
+			{
+				renderer.Render();
 			}
 			return FPL_NOT_IMPLEMENTED;
 		}

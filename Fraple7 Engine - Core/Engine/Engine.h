@@ -1,5 +1,4 @@
 #pragma once
-
 namespace Fraple7
 {
 	namespace Core
@@ -13,6 +12,7 @@ namespace Fraple7
 			int Init();
 		private:
 			const class Window& m_Window;
+
 		};
 
 	}

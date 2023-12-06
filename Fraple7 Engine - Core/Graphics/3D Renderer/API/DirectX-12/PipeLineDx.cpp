@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "PipeLineDx.h"
 #include "Utilities/Common/Common.h"
-#include "Platform/Windows/Window.h"
+#include "Studio/Platform/Windows/Window.h"
+
 namespace Fraple7
 {
 	namespace Core
@@ -10,6 +11,7 @@ namespace Fraple7
 			m_Window(window), m_BufferCount(BufferCount)
 		{
 			Create();
+			Commands();
 		}
 		PipeLineDx::~PipeLineDx()
 		{
@@ -29,6 +31,7 @@ namespace Fraple7
 			m_cQueue.Create(m_Device);
 			SwapChain();
 			RenderTargetView();
+
 			return FPL_SUCCESS;
 		}
 		uint32_t PipeLineDx::Destroy()
@@ -72,9 +75,30 @@ namespace Fraple7
 			};
 			m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_RtDescriptorHeap)) >> statusCode;
 
-			const auto rtvDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			m_RtvDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			m_BackBuffers.reserve(m_BufferCount);
 
+			{
+				CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RtDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
+				for (size_t i = 0; i < m_BufferCount; i++)
+				{
+					m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&m_BackBuffers[i])) >> statusCode;
+					m_Device->CreateRenderTargetView(m_BackBuffers[i].Get(), nullptr, rtvHandle);
+					rtvHandle.Offset(m_RtvDescriptorSize);
+				}
+				
+			}
+
+			Status = FPL_SUCCESS;
+			return Status;
+		}
+		uint32_t PipeLineDx::Commands()
+		{
+			uint32_t Status = FPL_PIPELINE_RENDER_TARGET_VIEW_ERROR;
+			m_CommandAllocator.Allocate(m_Device);
+			m_CommandList.Create(m_Device, m_CommandAllocator.GetCommandAlloc());
+			m_CommandList.Close();
 			Status = FPL_SUCCESS;
 			return Status;
 		}

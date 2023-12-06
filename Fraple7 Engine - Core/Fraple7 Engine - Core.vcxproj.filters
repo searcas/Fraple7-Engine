@@ -27,12 +27,6 @@
     <ClInclude Include="Utilities\Math\Math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Platform\Abstract\Window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Platform\Windows\Window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -51,7 +45,10 @@
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\CommandQueue.h">
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Command.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\Renderer\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -63,9 +60,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Utilities\Math\Math.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Platform\Windows\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Engine.cpp">
@@ -83,7 +77,10 @@
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\CommandQueue.cpp">
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Command.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\Renderer\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
