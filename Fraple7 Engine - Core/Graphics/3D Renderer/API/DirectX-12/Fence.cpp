@@ -7,15 +7,25 @@ namespace Fraple7
 {
 	namespace Core
 	{
-		FenceDx::FenceDx()
+		FenceDx::FenceDx(const Commands::Queue& cq) : m_CQueue(cq)
 		{
 
+		}
+
+		FenceDx::~FenceDx()
+		{
+			m_CQueue.GetCmdQueue()->Signal(m_Fence.Get(), m_FenceVal) >> statusCode;
+			m_Fence->SetEventOnCompletion(m_FenceVal, m_FenceEvent) >> statusCode;
+
+			if(WaitForSingleObject(m_FenceEvent, 2000) == WAIT_FAILED)
+			{
+				GetLastError() >> statusCode;
+			}
 		}
 
 		void FenceDx::Create(const ComPtr< ID3D12Device2>& device)
 		{
 			device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)) >> statusCode;
-
 		}
 		void FenceDx::Signaling()
 		{

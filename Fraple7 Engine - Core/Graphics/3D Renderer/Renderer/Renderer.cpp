@@ -7,17 +7,15 @@ namespace Fraple7
 	namespace Core
 	{
 		Renderer::Renderer(const Window& window) 
-			: m_PipeLine(window, 2)
+			: m_PipeLine(window, 2), m_Fence(m_PipeLine.GetCommandQueue())
 		{
-			m_PipeLine.Create();
 			m_Fence.Create(m_PipeLine.GetDevice());
 			m_Fence.Signaling();
 		}
 
 		void Renderer::Render()
 		{
-
-			m_CurrentBackBufferIndex = m_PipeLine.GetSwapChain()->GetCurrentBackBufferIndex();
+			m_CurrentBackBufferIndex = m_PipeLine.GetSwapChain().GetSwapChain()->GetCurrentBackBufferIndex();
 
 			auto& BackBuffer = m_PipeLine.GetBackBuffer()[m_CurrentBackBufferIndex];
 
@@ -58,7 +56,7 @@ namespace Fraple7
 				auto& fenceVal = m_Fence.GetFenceVal();
 				cQueue->Signal(m_Fence.GetFence().Get(), fenceVal++) >> statusCode;
 				// present frame
-				m_PipeLine.GetSwapChain()->Present(0, 0) >> statusCode;
+				m_PipeLine.GetSwapChain().Sync(0,0);
 
 				//wait for command list / allocator to become free
 				m_Fence.GetFence()->SetEventOnCompletion(fenceVal - 1, m_Fence.GetFenceEvent()) >> statusCode;

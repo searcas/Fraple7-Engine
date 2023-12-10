@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Window.h"
-#include <Windows.h>
-
+#include "Utilities/Common/Common.h"
 #ifdef WINDOWS
 
 namespace Fraple7
@@ -10,81 +9,83 @@ namespace Fraple7
 	{
 		static LRESULT HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam) noexcept
 		{
+
 			switch (msg)
 			{
-			case WM_CLOSE:
-			{
-				PostQuitMessage(0);
-				return 0;
-			}
-			case WM_KILLFOCUS:
-			{
-				break;
-			}
-			case WM_ACTIVATE:
-				//confine/free cursor on window to foreground/background if cursor disabled
-			{
+				case WM_CLOSE:
+				{
+					PostQuitMessage(0);
+					return 0;
+				}
+				case WM_KILLFOCUS:
+				{
+					break;
+				}
+				case WM_ACTIVATE:
+					//confine/free cursor on window to foreground/background if cursor disabled
 
-				break;
-				/********* KEYBOARD *********/
-			case WM_KEYDOWN:
-				// syskey commands need to be handled to track ALT key (VK_MENU) and F10
-			case WM_SYSKEYDOWN:
-			{
-				break;
-			}
-			case WM_KEYUP:
-			case WM_SYSKEYUP:
-			{
+					break;
+					/********* KEYBOARD *********/
+				case WM_KEYDOWN:
+					// syskey commands need to be handled to track ALT key (VK_MENU) and F10
+				case WM_SYSKEYDOWN:
+				{
 
-				break;
-			}
-			case WM_CHAR:
-				break;
-				//############### MOUSE MESSAGES ########################################
-			case WM_MOUSEMOVE:
-			{
-				const POINTS pt = MAKEPOINTS(lparam);
-				//not in client -> log move /maintain capture if button down
+					break;
+				}
+				case WM_KEYUP:
+				case WM_SYSKEYUP:
+				{
 
-				break;
-			}
-			case WM_LBUTTONDOWN:
-			{
-				SetForegroundWindow(hwnd);
+					break;
+				}
+				case WM_CHAR:
 
-				break;
-			}
-			case WM_RBUTTONDOWN:
-			{
-				break;
-			}
-			case WM_LBUTTONUP:
-			{
-				//stifle this mouse message if imgui want to capture
-				break;
-			}
-			case WM_RBUTTONUP:
-			{
-				//stifle this mouse message if imgui want to capture
-				break;
-			}
-			case WM_MOUSEWHEEL:
-			{
+					break;
+					//############### MOUSE MESSAGES ########################################
+				case WM_MOUSEMOVE:
+				{
+					const POINTS pt = MAKEPOINTS(lparam);
 
-				//stifle this mouse message if imgui want to capture
+					break;
+				}
+				case WM_LBUTTONDOWN:
+				{
+					SetForegroundWindow(hwnd);
 
-				break;
-			}
-			// ########### RAW MOUSE MESSAGES ######################//
-			case WM_INPUT:
-			{
+					break;
+				}
+				case WM_RBUTTONDOWN:
+				{
+					//stifle this mouse message if imgui want to capture
 
-				UINT size = 0;
-			}
+					break;
+				}
+				case WM_LBUTTONUP:
+				{
+					//stifle this mouse message if imgui want to capture
+
+					break;
+				}
+				case WM_RBUTTONUP:
+				{
+					//stifle this mouse message if imgui want to capture
+					break;
+				}
+				case WM_MOUSEWHEEL:
+				{
+					const POINTS pt = MAKEPOINTS(lparam);
+					const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+					break;
+				}
+				// ########### RAW MOUSE MESSAGES ######################//
+				case WM_INPUT:
+				{
+
+					break;
+				}
 			}
 			return DefWindowProc(hwnd, msg, wParam, lparam);
-			}
 		}
 		static LRESULT HandleMsgThunk(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
@@ -115,8 +116,41 @@ namespace Fraple7
 
 		WinWindow::WinWindow(uint32_t width, uint32_t height, std::string&& name)
 		{
-	
+			HRESULT result;
+			// Register the window class.
+			const wchar_t CLASS_NAME[] = L"Sample Window Class";
 
+			WNDCLASS wc = { };
+
+			wc.lpfnWndProc = HandleMsgSetup;
+			wc.hInstance = NULL;
+			wc.lpszClassName = CLASS_NAME;
+
+			RegisterClass(&wc);
+
+			// Create the window.
+
+				m_Hwnd = CreateWindowEx(
+				0,								// Optional window styles.
+				CLASS_NAME,                     // Window class
+				L"Fraple7 Studio",				// Window text
+				WS_OVERLAPPEDWINDOW,            // Window style
+
+				// Size and position
+				CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+
+				NULL,       // Parent window    
+				NULL,       // Menu
+				NULL,  // Instance handle
+				NULL        // Additional application data
+			);
+
+			if (m_Hwnd == NULL)
+			{
+				(result = GetLastError()) >> statusCode;
+			}
+			else
+				ShowWindow(m_Hwnd, SW_SHOW);
 		}
 
 		WinWindow::~WinWindow()
@@ -128,11 +162,27 @@ namespace Fraple7
 		}
 		HWND WinWindow::GetHandle()
 		{
-			return HWND();
+			return m_Hwnd;
 		}
-		bool WinWindow::Running() const
+
+		uint32_t WinWindow::Run() const
 		{
-			return true;
+			// Run the message loop.
+
+			MSG msg = { };
+			msg.hwnd = m_Hwnd;
+			while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE) > 0)
+			{
+				if (msg.message == WM_QUIT )
+				{
+					// return optional wrapping int (arg to PostQuitMessage is in wparam) signals quit
+					return msg.wParam;
+				}
+
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+			return 1;
 		}
 	}
 }

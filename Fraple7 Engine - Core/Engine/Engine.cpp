@@ -20,13 +20,12 @@ namespace Fraple7
 		int Engine::Active()
 		{
 			Renderer renderer(m_Window);
-			
 
-			while (m_Window.Running())
+			while (m_Window.Run())
 			{
 				renderer.Render();
 			}
-			return FPL_NOT_IMPLEMENTED;
+			return FPL_SUCCESS;
 		}
 		int Engine::Init()
 		{

@@ -1,7 +1,7 @@
 #pragma once
 #include "directx/d3dx12.h"
 #include "Utilities/Common/Common.h"
-
+#include "Graphics/3D Renderer/API/DirectX-12/Command.h"
 namespace Fraple7
 {
 	namespace Core
@@ -9,8 +9,8 @@ namespace Fraple7
 		class FenceDx
 		{
 		public:
-			FenceDx();
-			~FenceDx() = default;
+			FenceDx(const Commands::Queue&);
+			~FenceDx();
 			void Create(const ComPtr< ID3D12Device2>& device);
 			void Signaling();
 		public:
@@ -22,6 +22,7 @@ namespace Fraple7
 			ComPtr<ID3D12Fence> m_Fence;
 			uint64_t m_FenceVal = 0;
 			HANDLE m_FenceEvent;
+			const Commands::Queue& m_CQueue;
 		};
 	}
 }

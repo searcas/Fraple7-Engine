@@ -12,11 +12,11 @@ namespace Fraple7
 			WinWindow(uint32_t width, uint32_t height, std::string&& name);
 			~WinWindow();
 			void Initialize() override;
-			virtual bool Running() const override;
+			uint32_t Run()const override;
 			static HWND GetHandle();
 			static void SetInstance(HINSTANCE instance) { m_Hinst = instance; }
 		private:
-			HWND m_Handle;
+			static inline HWND m_Hwnd;
 			inline static HINSTANCE m_Hinst;
 		};
 	}

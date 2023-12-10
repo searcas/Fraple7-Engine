@@ -10,7 +10,9 @@
 #include <iostream>
 #include <ranges>
 #include <format>
-
+#include <thread>
+#include <chrono>
+#include <mutex>
 // add headers that you want to pre-compile here
 #include "framework.h"
 

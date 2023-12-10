@@ -19,7 +19,7 @@ namespace Fraple7
 			void SetName(std::string&& setName)  { m_Name = std::move(setName);  };
 			void SetWidth(uint32_t width) { m_Width = width; }
 			void SetHeight(uint32_t height) { m_Height = height; }
-			virtual bool Running() const = 0;
+			virtual uint32_t Run()const = 0;
 		protected:
 			std::string m_Name = "Fraple7 Engine";
 			uint32_t m_Width = 1920;
