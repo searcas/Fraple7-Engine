@@ -14,7 +14,7 @@ namespace Fraple7
 
 		FenceDx::~FenceDx()
 		{
-			m_CQueue.GetCmdQueue()->Signal(m_Fence.Get(), m_FenceVal) >> statusCode;
+			m_CQueue.GetCmdQueue()->Signal(m_Fence.Get(), ++m_FenceVal) >> statusCode;
 			m_Fence->SetEventOnCompletion(m_FenceVal, m_FenceEvent) >> statusCode;
 
 			if(WaitForSingleObject(m_FenceEvent, 2000) == WAIT_FAILED)
@@ -35,6 +35,18 @@ namespace Fraple7
 				GetLastError() >> statusCode;
 				throw std::runtime_error{ "Failed to create fence event" };
 			}
+		}
+		void FenceDx::Wait(uint64_t time)
+		{
+			m_Fence->SetEventOnCompletion(m_FenceVal, m_FenceEvent) >> statusCode;
+			if (::WaitForSingleObject(m_FenceEvent, time) == WAIT_FAILED)
+			{
+				GetLastError() >> statusCode;
+			}
+		}
+		void FenceDx::Signal()
+		{
+			m_CQueue.GetCmdQueue()->Signal(m_Fence.Get(), ++m_FenceVal) >> statusCode;
 		}
 	}
 }

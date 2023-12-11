@@ -2,6 +2,8 @@
 #include "Renderer.h"
 #include "Studio/Platform/Abstract/Window.h"
 #include "Utilities/Common/Common.h"
+#include "Graphics/3D Renderer/API/DirectX-12/VertexBuffer.h"
+
 namespace Fraple7
 {
 	namespace Core
@@ -11,8 +13,26 @@ namespace Fraple7
 		{
 			m_Fence.Create(m_PipeLine.GetDevice());
 			m_Fence.Signaling();
-		}
+			VertexBuffer vertexBuffer(m_PipeLine.GetDevice());
+			auto& ComList = m_PipeLine.GetCommandList().GetCommandList();
+			auto& ComAlloc = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
+			auto& ComQueue = m_PipeLine.GetCommandQueue().GetCmdQueue();
+			ComAlloc->Reset() >> statusCode;
+			ComList->Reset(ComAlloc.Get(), nullptr) >> statusCode;
+			ComList->CopyResource(vertexBuffer.GetVertexBuffer().Get(), vertexBuffer.GetVertexUploadBuffer().Get());
+			ComList->Close() >> statusCode;
 
+			// Submit command list to queue as array with single element
+			ID3D12CommandList* const commandLists[] = { ComList.Get() };
+			ComQueue->ExecuteCommandLists((UINT)std::size(commandLists), commandLists);
+
+			// insert fence to detect when upload is complete
+			m_Fence.Signal();
+			m_Fence.Wait(INFINITE);
+
+			vertexBuffer.CreateVertexBufferView();
+			
+		}
 		void Renderer::Render()
 		{
 			m_CurrentBackBufferIndex = m_PipeLine.GetSwapChain().GetSwapChain()->GetCurrentBackBufferIndex();
@@ -23,14 +43,13 @@ namespace Fraple7
 			ComAll->Reset() >> statusCode;
 			auto& ComList = m_PipeLine.GetCommandList().GetCommandList();
 			ComList->Reset(ComAll.Get(), nullptr) >> statusCode;
-
 			{
 				// transition buffer resource to render target state
 				const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(BackBuffer.Get(), 
 					D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 				ComList->ResourceBarrier(1, &barrier);
 
-				FLOAT clearColor[] = { 0.4f, 0.1f, 0.69f, 1.0f };
+				FLOAT clearColor[] = { 0.9f, 0.69f, 0.69f, 1.0f };
 
 				const CD3DX12_CPU_DESCRIPTOR_HANDLE rtv{ m_PipeLine.GetRTDescHeap()->GetCPUDescriptorHandleForHeapStart(),
 															(INT)m_CurrentBackBufferIndex,m_PipeLine.GetRtDescSize() };
@@ -53,18 +72,12 @@ namespace Fraple7
 			}
 			{
 				// insert fence to mark command list completion
-				auto& fenceVal = m_Fence.GetFenceVal();
-				cQueue->Signal(m_Fence.GetFence().Get(), fenceVal++) >> statusCode;
+				m_Fence.Signal();
 				// present frame
 				m_PipeLine.GetSwapChain().Sync(0,0);
 
 				//wait for command list / allocator to become free
-				m_Fence.GetFence()->SetEventOnCompletion(fenceVal - 1, m_Fence.GetFenceEvent()) >> statusCode;
-				if (::WaitForSingleObject(m_Fence.GetFenceEvent(), INFINITE) == WAIT_FAILED)
-				{
-					GetLastError() >> statusCode;
-				}
-
+				m_Fence.Wait(INFINITE);
 			}
 		}
 

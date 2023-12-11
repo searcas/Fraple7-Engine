@@ -93,6 +93,8 @@
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Command.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Fence.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\ResourceMgr.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\VertexBuffer.h" />
     <ClInclude Include="Graphics\3D Renderer\API\PipeLine\PipeLine.h" />
     <ClInclude Include="Graphics\3D Renderer\Renderer\Renderer.h" />
     <ClInclude Include="pch.h" />
@@ -107,6 +109,8 @@
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Command.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Fence.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\ResourceMgr.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\VertexBuffer.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\PipeLine\PipeLine.cpp" />
     <ClCompile Include="Graphics\3D Renderer\Renderer\Renderer.cpp" />
     <ClCompile Include="pch.cpp">

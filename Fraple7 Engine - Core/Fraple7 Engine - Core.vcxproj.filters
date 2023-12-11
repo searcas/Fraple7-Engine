@@ -51,6 +51,12 @@
     <ClInclude Include="Graphics\3D Renderer\Renderer\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\VertexBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\ResourceMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Fraple7 Engine - Core.cpp">
@@ -81,6 +87,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\3D Renderer\Renderer\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\VertexBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\ResourceMgr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -13,7 +13,6 @@ namespace Fraple7
 		private:
 			const class Window& m_Window;
 			std::atomic_bool m_Stop = false;
-			
 		};
 
 	}

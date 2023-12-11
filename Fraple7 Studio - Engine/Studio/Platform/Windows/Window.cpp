@@ -178,7 +178,6 @@ namespace Fraple7
 					// return optional wrapping int (arg to PostQuitMessage is in wparam) signals quit
 					return msg.wParam;
 				}
-
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
