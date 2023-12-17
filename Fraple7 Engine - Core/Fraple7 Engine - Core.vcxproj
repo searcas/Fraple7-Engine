@@ -60,7 +60,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>d3d12.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -84,7 +84,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>d3d12.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -92,8 +92,12 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Command.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Fence.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\PipelineStateObject.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\RootSignature.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\ResourceMgr.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\ShadersLoader.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\VertexBuffer.h" />
     <ClInclude Include="Graphics\3D Renderer\API\PipeLine\PipeLine.h" />
     <ClInclude Include="Graphics\3D Renderer\Renderer\Renderer.h" />
@@ -101,6 +105,7 @@
     <ClInclude Include="Utilities\Common\Common.h" />
     <ClInclude Include="Utilities\EngineDefines\EngineStatus.h" />
     <ClInclude Include="Utilities\ErrorHandling\EngineErrorHandler.h" />
+    <ClInclude Include="Utilities\Logs\Logs.h" />
     <ClInclude Include="Utilities\Math\Math.h" />
   </ItemGroup>
   <ItemGroup>
@@ -108,8 +113,12 @@
     <ClCompile Include="Fraple7 Engine - Core.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Command.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Fence.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\PipelineStateObject.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\RootSignature.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\ResourceMgr.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\ShadersLoader.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\VertexBuffer.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\PipeLine\PipeLine.cpp" />
     <ClCompile Include="Graphics\3D Renderer\Renderer\Renderer.cpp" />
@@ -119,6 +128,24 @@
     </ClCompile>
     <ClCompile Include="Utilities\ErrorHandling\EngineErrorHandler.cpp" />
     <ClCompile Include="Utilities\Math\Math.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\PixelShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDirDir)%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDirDir)%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Shaders\VertexShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

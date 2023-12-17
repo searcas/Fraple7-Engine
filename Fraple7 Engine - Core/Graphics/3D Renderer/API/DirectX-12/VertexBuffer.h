@@ -13,22 +13,26 @@ namespace Fraple7
 			DirectX::XMFLOAT3 color;
 		};
 		constexpr Vertex s_VertexData[] = {
-			{ { 0.00f,   0.50f, 0.0f}, { 1.00f,  0.00f, 0.0f } },
-			{ { 0.50f,  -0.25f, 0.0f}, { 0.00f,  0.00f, 1.0f } },
-			{ {-0.50f,  -0.25f, 0.0f}, { 0.00f,  1.00f, 0.0f } },
+			{ { 0.00f,   0.50f, 0.0f}, { 1.00f,  1.00f, 1.0f } },
+			{ { 0.50f,  -0.25f, 0.0f}, { 0.00f,  1.00f, 0.0f } },
+			{ {-0.50f,  -0.25f, 0.0f}, { 0.00f,  0.00f, 1.0f } },
 		};
 		class VertexBuffer
 		{
 		public:
-			VertexBuffer(const ComPtr<ID3D12Device2>& device);
+			VertexBuffer();
+			void Create(const ComPtr<ID3D12Device2>& device);
 			~VertexBuffer();
 			const ComPtr<ID3D12Resource>& GetVertexBuffer() const { return m_VertexBuffer; }
 			const ComPtr<ID3D12Resource>& GetVertexUploadBuffer() const { return m_VertexUploadBuffer; }
-			void CreateVertexBufferView(const Vertex* vertex = s_VertexData, uint32_t vertices = std::size(s_VertexData));
+			void CreateVertexBufferView(UINT vertices = std::size(s_VertexData));
+			const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() { return m_VertexBufferView; }
+			uint32_t GetNumVertices() { return m_Vertices; }
 		private:
 			ComPtr<ID3D12Resource> m_VertexBuffer;
 			ComPtr<ID3D12Resource> m_VertexUploadBuffer;
 			uint32_t m_Vertices = std::size(s_VertexData);
+			D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView;
 		};
 	}
 }
