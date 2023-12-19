@@ -28,9 +28,10 @@ namespace Fraple7
 			pipelineStateStream.primitiveTopology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 			pipelineStateStream.vertexShader = CD3DX12_SHADER_BYTECODE(shaders.GetBlob(ShadersLoader::ShaderType::Vertex).Get());
 			pipelineStateStream.pixelshader = CD3DX12_SHADER_BYTECODE(shaders.GetBlob(ShadersLoader::ShaderType::Pixel).Get());
+			pipelineStateStream.DSVFormats = DXGI_FORMAT_D32_FLOAT;
 			pipelineStateStream.RTVFormats = { .RTFormats { DXGI_FORMAT_R8G8B8A8_UNORM}, .NumRenderTargets = 1 };
 			const D3D12_PIPELINE_STATE_STREAM_DESC  pipelineStateStreamDesc = { sizeof(PipelineStateStream), &pipelineStateStream };
-
+			 
 			device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_PipeLineState)) >> statusCode;
 		}
 	}

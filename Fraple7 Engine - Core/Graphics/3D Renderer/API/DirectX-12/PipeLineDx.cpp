@@ -10,17 +10,19 @@ namespace Fraple7
 #ifdef _DEBUG
 		static inline void DebugLayer()
 		{
-			ComPtr<ID3D12Debug> debugController;
+			ComPtr<ID3D12Debug1> debugController;
 			D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)) >> statusCode;
 			debugController->EnableDebugLayer();
+			debugController->SetEnableGPUBasedValidation(true);
 		}
 #else 
 #define DebugLayer();
 #endif
 		PipeLineDx::PipeLineDx(const Window& window, uint32_t BufferCount) : 
-			m_Window(window), m_BufferCount(BufferCount)
+			m_Window(window), m_BufferCount(BufferCount), m_DepthBuffer(m_Device, window)
 		{
 			Create();
+			m_DepthBuffer.Init();
 			Commands();
 		}
 		PipeLineDx::~PipeLineDx()
@@ -40,7 +42,7 @@ namespace Fraple7
 			};
 			m_cQueue.SetCommandQueueDescriptor(desc);
 			m_cQueue.Create(m_Device);
-			m_Swapchain.Create(m_Window, m_DxGiFactory, m_cQueue,m_BufferCount);
+			m_Swapchain.Create(m_Window, m_DxGiFactory, m_cQueue, m_BufferCount);
 			RenderTargetView();
 			return FPL_SUCCESS;
 		}
@@ -56,6 +58,7 @@ namespace Fraple7
 			const D3D12_DESCRIPTOR_HEAP_DESC desc = {
 				.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
 				.NumDescriptors = m_BufferCount,
+				.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE
 			};
 			m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_RtDescriptorHeap)) >> statusCode;
 

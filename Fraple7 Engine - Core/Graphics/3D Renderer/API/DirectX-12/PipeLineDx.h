@@ -4,6 +4,8 @@
 #include <wrl.h>
 #include <dxgi1_6.h>
 #include "Command.h"
+#include "Graphics/3D Renderer/API/DirectX-12/DepthBuffer.h"
+
 #include <vector>
 namespace Fraple7
 {
@@ -29,7 +31,7 @@ namespace Fraple7
 			PipeLineDx(const class Window& window, uint32_t BufferCount);
 			~PipeLineDx();
 			uint32_t Create() override;
-	
+			const CD3DX12_CPU_DESCRIPTOR_HANDLE& GetDSVHandle() { return m_DepthBuffer.GetDSVHandle(); }
 		public:
 			const Commands::Allocator& GetCommandAllocator() const { return m_CommandAllocator; }
 			const Commands::List& GetCommandList() const { return m_CommandList; }
@@ -61,7 +63,7 @@ namespace Fraple7
 			Commands::Queue m_cQueue;
 			const Window& m_Window;
 			uint32_t m_BufferCount;
-
+			DepthBuffer m_DepthBuffer;
 
 		};
 

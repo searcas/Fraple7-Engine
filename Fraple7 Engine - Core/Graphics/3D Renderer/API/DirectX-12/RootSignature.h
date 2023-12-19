@@ -5,6 +5,7 @@ namespace Fraple7
 {
 	namespace Core
 	{
+#define ROOT_PARAMETERS 2
 		class RootSignature
 		{
 		public:
@@ -17,6 +18,7 @@ namespace Fraple7
 		private:
 			ComPtr<ID3D12RootSignature> m_RootSignature;
 			CD3DX12_ROOT_SIGNATURE_DESC m_SigDesc;
+			CD3DX12_ROOT_PARAMETER m_RootParameters[ROOT_PARAMETERS]{};
 
 		};
 

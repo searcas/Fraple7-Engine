@@ -3,6 +3,8 @@
 #include "Graphics/3D Renderer/API/DirectX-12/Fence.h"
 #include "Graphics/3D Renderer/API/DirectX-12/VertexBuffer.h"
 #include "Graphics/3D Renderer/API/DirectX-12/PipelineStateObject.h"
+#include "Projection.h"
+#include "Graphics/3D Renderer/API/DirectX-12/IndexBuffer.h"
 
 namespace Fraple7
 {
@@ -23,6 +25,8 @@ namespace Fraple7
 			CD3DX12_VIEWPORT m_Viewport;
 			FenceDx m_Fence;
 			PSO m_PSO;
+			Projection m_Projection;
+			IndexBuffer m_IndexBuffer;
 		};
 
 	}

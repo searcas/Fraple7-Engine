@@ -72,6 +72,15 @@
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\Renderer\Projection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\IndexBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\DepthBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Fraple7 Engine - Core.cpp">
@@ -120,6 +129,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\Renderer\Projection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\IndexBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\DepthBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

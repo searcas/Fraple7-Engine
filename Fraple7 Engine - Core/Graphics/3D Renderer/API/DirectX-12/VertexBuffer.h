@@ -10,12 +10,16 @@ namespace Fraple7
 		struct Vertex
 		{
 			DirectX::XMFLOAT3 position;
-			DirectX::XMFLOAT3 color;
 		};
 		constexpr Vertex s_VertexData[] = {
-			{ { 0.00f,   0.50f, 0.0f}, { 1.00f,  1.00f, 1.0f } },
-			{ { 0.50f,  -0.25f, 0.0f}, { 0.00f,  1.00f, 0.0f } },
-			{ {-0.50f,  -0.25f, 0.0f}, { 0.00f,  0.00f, 1.0f } },
+			{ { -1.0f,   -1.0f, -1.0f} },
+			{ { -1.0f,    1.0f, -1.0f} },
+			{ {  1.0f,    1.0f, -1.0f} },
+			{ {  1.0f,   -1.0f, -1.0f} },
+			{ { -1.0f,   -1.0f,  1.0f} },
+			{ { -1.0f,    1.0f,  1.0f} },
+			{ {  1.0f,    1.0f,  1.0f} },
+			{ {  1.0f,   -1.0f,  1.0f} }
 		};
 		class VertexBuffer
 		{
