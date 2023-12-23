@@ -19,7 +19,8 @@ namespace Fraple7
 			ComPtr<ID3D12RootSignature> m_RootSignature;
 			CD3DX12_ROOT_SIGNATURE_DESC m_SigDesc;
 			CD3DX12_ROOT_PARAMETER m_RootParameters[ROOT_PARAMETERS]{};
-
+			CD3DX12_STATIC_SAMPLER_DESC m_StaticSampler;
+			CD3DX12_DESCRIPTOR_RANGE m_DescRange;
 		};
 
 	}

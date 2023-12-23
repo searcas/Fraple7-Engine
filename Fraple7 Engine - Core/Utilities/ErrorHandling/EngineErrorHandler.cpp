@@ -19,12 +19,10 @@ namespace Fraple7
 
 			std::wstring description;
 			if (!result) {
-				//chilog.warn(L"Failed formatting windows error");
 			}
 			else {
 				description = descriptionWinalloc;
 				if (LocalFree(descriptionWinalloc)) {
-					//chilog.warn(L"Failed freeing memory for windows error formatting");
 				}
 				if (description.ends_with(L"\r\n")) {
 					description.resize(description.size() - 2);

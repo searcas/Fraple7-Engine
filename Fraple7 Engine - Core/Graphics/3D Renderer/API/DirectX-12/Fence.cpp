@@ -7,7 +7,7 @@ namespace Fraple7
 {
 	namespace Core
 	{
-		FenceDx::FenceDx(const Commands::Queue& cq) : m_CQueue(cq)
+		FenceDx::FenceDx(const Commands::QueueDx& cq) : m_CQueue(cq)
 		{
 
 		}

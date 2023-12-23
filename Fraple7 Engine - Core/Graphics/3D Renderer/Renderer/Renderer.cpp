@@ -8,7 +8,7 @@ namespace Fraple7
 	namespace Core
 	{
 		Renderer::Renderer(const Window& window) 
-			: m_PipeLine(window, 2), m_Fence(m_PipeLine.GetCommandQueue()), m_Projection(window)
+			: m_PipeLine(window, 2), m_Fence(m_PipeLine.GetCommandQueue()), m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice())
 		{
 			m_Fence.Create(m_PipeLine.GetDevice());
 			m_Fence.Signaling();
@@ -17,16 +17,9 @@ namespace Fraple7
 			auto& ComList = m_PipeLine.GetCommandList().GetCommandList();
 			auto& ComAlloc = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
 			auto& ComQueue = m_PipeLine.GetCommandQueue().GetCmdQueue();
+			Commands::Queue que(ComList,ComAlloc,ComQueue);
+			que.Join(m_VertexBuffer.GetVertexBuffer(), m_VertexBuffer.GetVertexUploadBuffer());
 
-			// TODO NEED TO REFACTOR THIS
-			ComAlloc->Reset() >> statusCode;
-			ComList->Reset(ComAlloc.Get(), nullptr) >> statusCode;
-			ComList->CopyResource(m_VertexBuffer.GetVertexBuffer().Get(), m_VertexBuffer.GetVertexUploadBuffer().Get());
-			ComList->Close() >> statusCode;
-
-			// Submit command list to queue as array with single element
-			ID3D12CommandList* const commandLists[] = { ComList.Get() };
-			ComQueue->ExecuteCommandLists((UINT)std::size(commandLists), commandLists);
 			// insert fence to detect when upload is complete
 			m_Fence.Signal();
 			m_Fence.Wait(INFINITE);
@@ -34,36 +27,20 @@ namespace Fraple7
 			m_VertexBuffer.CreateVertexBufferView();
 			m_IndexBuffer.Create(m_PipeLine.GetDevice());
 			
-			
-			// TODO NEED TO REFACTOR THIS
-			ComAlloc->Reset() >> statusCode;
-			ComList->Reset(ComAlloc.Get(), nullptr) >> statusCode;
-			ComList->CopyResource(m_IndexBuffer.GetIndexBuffer().Get(), m_IndexBuffer.GetIndexUploadBuffer().Get());
-			ComList->Close() >> statusCode;
-
-			// Submit command list to queue as array with single element
-			ID3D12CommandList* const comListIndex[] = { ComList.Get() };
-			ComQueue->ExecuteCommandLists((UINT)std::size(comListIndex), comListIndex);
-			// insert fence to detect when upload is complete
+			que.Join(m_IndexBuffer.GetIndexBuffer(), m_IndexBuffer.GetIndexUploadBuffer());
 			m_Fence.Signal();
 			m_Fence.Wait(INFINITE);
 
 			m_IndexBuffer.CreateIndexBufferView();
 
-			m_IndexBuffer.CreateColorSide(m_PipeLine.GetDevice());
+			m_Texture.Create();
 
-
-			ComAlloc->Reset() >> statusCode;
-			ComList->Reset(ComAlloc.Get(), nullptr) >> statusCode;
-			ComList->CopyResource(m_IndexBuffer.GetFaceColorBuffer().Get(), m_IndexBuffer.GetFaceColorUploadBuffer().Get());
-			ComList->Close() >> statusCode;
-
-			// Submit command list to queue as array with single element
-			ID3D12CommandList* const comListColorData[] = { ComList.Get() };
-			ComQueue->ExecuteCommandLists((UINT)std::size(comListColorData), comListColorData);
-			// insert fence to detect when upload is complete
+			que.Join(m_Texture.GetTextureBuffer(), m_Texture.GetTextureUploadBuffer(), m_Texture.GetSubData().size(), m_Texture.GetSubData());
 			m_Fence.Signal();
 			m_Fence.Wait(INFINITE);
+			m_Texture.DescriptorHeap();
+			// Create descriptor in the heap
+			m_Texture.ShaderResourceViewDesc();
 
 			m_PSO.Create(m_PipeLine.GetDevice());
 			m_ScissorRect = CD3DX12_RECT{ 0,0, LONG_MAX, LONG_MAX };
@@ -113,7 +90,9 @@ namespace Fraple7
 			ComList->RSSetViewports(1, &m_Viewport);
 			ComList->RSSetScissorRects(1, &m_ScissorRect);
 
-			ComList->SetGraphicsRootConstantBufferView(1, m_IndexBuffer.GetFaceColorBuffer()->GetGPUVirtualAddress());
+			//bind the heap containing the texture descriptor
+			ComList->SetDescriptorHeaps(1, m_Texture.GetSrvHeap().GetAddressOf());
+			ComList->SetGraphicsRootDescriptorTable(1, m_Texture.GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
 			// bind render target & depth stencil
 			ComList->OMSetRenderTargets(1, &rtv, TRUE, &m_PipeLine.GetDSVHandle());
 
@@ -122,16 +101,6 @@ namespace Fraple7
 					DirectX::XMMatrixRotationX(1.0f * t + 1.f) *
 					DirectX::XMMatrixRotationY(1.2f * t + 2.f) *
 					DirectX::XMMatrixRotationZ(1.1f * t + 0.f) *
-					m_Projection.GetProjectionView());
-
-				ComList->SetGraphicsRoot32BitConstants(0, sizeof(mvp) / 4, &mvp, 0);
-				ComList->DrawIndexedInstanced(m_IndexBuffer.GetIndices(), 1, 0, 0, 0);
-			}
-			{
-				const auto mvp = DirectX::XMMatrixTranspose(
-					DirectX::XMMatrixRotationX(1.0f * t - 1.f) *
-					DirectX::XMMatrixRotationY(1.2f * t - 2.f) *
-					DirectX::XMMatrixRotationZ(1.1f * t - 3.f) *
 					m_Projection.GetProjectionView());
 
 				ComList->SetGraphicsRoot32BitConstants(0, sizeof(mvp) / 4, &mvp, 0);

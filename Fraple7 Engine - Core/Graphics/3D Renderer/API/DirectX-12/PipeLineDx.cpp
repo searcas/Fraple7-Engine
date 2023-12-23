@@ -89,7 +89,7 @@ namespace Fraple7
 			Status = FPL_SUCCESS;
 			return Status;
 		}
-		uint32_t PipeLineDx::SwapChain::Create(const class Window& window, ComPtr<IDXGIFactory4>& DxGiFactory, Commands::Queue& Queue,uint32_t BufferCount)
+		uint32_t PipeLineDx::SwapChain::Create(const class Window& window, ComPtr<IDXGIFactory4>& DxGiFactory, Commands::QueueDx& Queue,uint32_t BufferCount)
 		{
 			uint32_t Status = FPL_PIPELINE_SWAP_CHAIN_ERROR;
 			const DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {

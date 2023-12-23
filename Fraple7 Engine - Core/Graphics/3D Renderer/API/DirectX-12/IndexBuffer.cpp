@@ -20,7 +20,6 @@ namespace Fraple7
 		}
 		void IndexBuffer::CreateColorSide(const ComPtr<ID3D12Device2>&device)
 		{
-
 			ResourceMgr::Allocate(device, m_FaceColorBuffer, sizeof(s_FaceColors), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
 			ResourceMgr::Allocate(device, m_FaceColorUploadBuffer, sizeof(s_FaceColors), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
 
@@ -31,7 +30,6 @@ namespace Fraple7
 		IndexBuffer::~IndexBuffer()
 		{
 			m_IndexUploadBuffer->Unmap(0, nullptr);
-			m_FaceColorUploadBuffer->Unmap(0, nullptr);
 		}
 		void IndexBuffer::CreateIndexBufferView(UINT vertices)
 		{

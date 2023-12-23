@@ -1,13 +1,10 @@
 #pragma once
-#include <wrl.h>
-#include <dxgi1_6.h>
-#include "d3d12.h"
-
+#include "directx/d3dx12.h"
+#include "Utilities/Common/Common.h"
 namespace Fraple7
 {
 	namespace Core
 	{
-		using Microsoft::WRL::ComPtr;
 
 		class Commands
 		{
@@ -15,8 +12,22 @@ namespace Fraple7
 			class Queue
 			{
 			public:
-				Queue() = default;
-				Queue(const D3D12_COMMAND_QUEUE_DESC& desc);
+				Queue(const ComPtr<ID3D12GraphicsCommandList>&, const ComPtr<ID3D12CommandAllocator>&, const ComPtr<ID3D12CommandQueue>& );
+				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src);
+				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData);
+				~Queue() = default;
+			private:
+			private:
+				const ComPtr<ID3D12GraphicsCommandList>& m_ComList;
+				const ComPtr<ID3D12CommandAllocator>& m_ComAll;
+				const ComPtr<ID3D12CommandQueue>& m_ComQ;
+			};
+
+			class QueueDx
+			{
+			public:
+				QueueDx() = default;
+				QueueDx(const D3D12_COMMAND_QUEUE_DESC& desc);
 				void SetCommandQueueDescriptor(const D3D12_COMMAND_QUEUE_DESC& desc);
 				uint32_t Create(ComPtr<ID3D12Device2>& device);
 				const ComPtr<ID3D12CommandQueue>& GetCmdQueue() const { return m_CommandQueue; }

@@ -4,6 +4,7 @@
 #include "Utilities/Common/Common.h"
 #include <thread>
 
+
 using namespace Fraple7::Core;
 int wWinMain(
     _In_ HINSTANCE hInstance,
