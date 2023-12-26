@@ -27,7 +27,7 @@ namespace Fraple7
 		{
 			device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)) >> statusCode;
 		}
-		void FenceDx::Signaling()
+		void FenceDx::CreateAnEvent()
 		{
 			m_FenceEvent = CreateEventW(nullptr, FALSE, FALSE, FALSE);
 			if (!m_FenceEvent)
@@ -47,6 +47,11 @@ namespace Fraple7
 		void FenceDx::Signal()
 		{
 			m_CQueue.GetCmdQueue()->Signal(m_Fence.Get(), ++m_FenceVal) >> statusCode;
+		}
+		void FenceDx::Job()
+		{
+			Signal();
+			Wait(INFINITE);
 		}
 	}
 }

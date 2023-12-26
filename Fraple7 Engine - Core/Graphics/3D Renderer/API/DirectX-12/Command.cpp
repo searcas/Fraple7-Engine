@@ -44,13 +44,13 @@ namespace Fraple7
 			device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, 
 			cAlloc.Get(), nullptr, IID_PPV_ARGS(&m_CommandList)) >> statusCode;
 		}
-		void Commands::Queue::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src)
+		void Commands::Queue::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, D3D12_RESOURCE_STATES TransitionState)
 		{
 			m_ComAll->Reset() >> statusCode;
 			m_ComList->Reset(m_ComAll.Get(), nullptr) >> statusCode;
 			
 			m_ComList->CopyResource(dst.Get(), src.Get());
-
+			Transition(dst, TransitionState);
 			m_ComList->Close() >> statusCode;
 
 			// Submit command list to queue as array with single element
@@ -58,16 +58,22 @@ namespace Fraple7
 			m_ComQ->ExecuteCommandLists((UINT)std::size(commandLists), commandLists);
 
 		}
-		void Commands::Queue::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData)
+		void Commands::Queue::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData, D3D12_RESOURCE_STATES TransitionState)
 		{
 			m_ComAll->Reset() >> statusCode;
 			m_ComList->Reset(m_ComAll.Get(), nullptr) >> statusCode;
 			UpdateSubresources(m_ComList.Get(), dst.Get(), src.Get(), 0, 0, (UINT)size, srcData.data());
+			Transition(dst, TransitionState);
 			m_ComList->Close() >> statusCode;
 
 			// Submit command list to queue as array with single element
 			ID3D12CommandList* const commandLists[] = { m_ComList.Get() };
 			m_ComQ->ExecuteCommandLists((UINT)std::size(commandLists), commandLists);
+		}
+		void Commands::Queue::Transition(const ComPtr<ID3D12Resource>& buffer, D3D12_RESOURCE_STATES state)
+		{
+			const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, state);
+			m_ComList->ResourceBarrier(1, &barrier);
 		}
 		Commands::Queue::Queue(const ComPtr<ID3D12GraphicsCommandList>& comList, const ComPtr<ID3D12CommandAllocator>& comAll, const ComPtr<ID3D12CommandQueue>& comQ) 
 			: m_ComList(comList), m_ComAll(comAll), m_ComQ(comQ)

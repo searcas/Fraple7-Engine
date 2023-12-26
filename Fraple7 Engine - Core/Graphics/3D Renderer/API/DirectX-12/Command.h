@@ -13,8 +13,9 @@ namespace Fraple7
 			{
 			public:
 				Queue(const ComPtr<ID3D12GraphicsCommandList>&, const ComPtr<ID3D12CommandAllocator>&, const ComPtr<ID3D12CommandQueue>& );
-				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src);
-				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData);
+				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, D3D12_RESOURCE_STATES);
+				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData, D3D12_RESOURCE_STATES );
+				void Transition(const ComPtr<ID3D12Resource>&buffer, D3D12_RESOURCE_STATES state);
 				~Queue() = default;
 			private:
 			private:

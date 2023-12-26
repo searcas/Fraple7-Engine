@@ -12,9 +12,10 @@ namespace Fraple7
 			FenceDx(const Commands::QueueDx&);
 			~FenceDx();
 			void Create(const ComPtr< ID3D12Device2>& device);
-			void Signaling();
+			void CreateAnEvent();
 			void Wait(uint64_t time);
 			void Signal();
+			void Job();
 		public:
 			const ComPtr<ID3D12Fence>& GetFence()const { return m_Fence; }
 			uint64_t& GetFenceVal() { return m_FenceVal; }

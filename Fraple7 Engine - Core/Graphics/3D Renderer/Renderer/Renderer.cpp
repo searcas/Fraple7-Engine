@@ -8,36 +8,37 @@ namespace Fraple7
 	namespace Core
 	{
 		Renderer::Renderer(const Window& window) 
-			: m_PipeLine(window, 2), m_Fence(m_PipeLine.GetCommandQueue()), m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice())
+			: m_PipeLine(window, 6), m_Fence(m_PipeLine.GetCommandQueue()), m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice())
 		{
 			m_Fence.Create(m_PipeLine.GetDevice());
-			m_Fence.Signaling();
+			m_Fence.CreateAnEvent();
 			m_VertexBuffer.Create(m_PipeLine.GetDevice());
 			
 			auto& ComList = m_PipeLine.GetCommandList().GetCommandList();
 			auto& ComAlloc = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
 			auto& ComQueue = m_PipeLine.GetCommandQueue().GetCmdQueue();
 			Commands::Queue que(ComList,ComAlloc,ComQueue);
-			que.Join(m_VertexBuffer.GetVertexBuffer(), m_VertexBuffer.GetVertexUploadBuffer());
+			que.Join(m_VertexBuffer.GetVertexBuffer(), m_VertexBuffer.GetVertexUploadBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 			// insert fence to detect when upload is complete
-			m_Fence.Signal();
-			m_Fence.Wait(INFINITE);
+			m_Fence.Job();
+
 
 			m_VertexBuffer.CreateVertexBufferView();
 			m_IndexBuffer.Create(m_PipeLine.GetDevice());
 			
-			que.Join(m_IndexBuffer.GetIndexBuffer(), m_IndexBuffer.GetIndexUploadBuffer());
-			m_Fence.Signal();
-			m_Fence.Wait(INFINITE);
+			que.Join(m_IndexBuffer.GetIndexBuffer(), m_IndexBuffer.GetIndexUploadBuffer(), D3D12_RESOURCE_STATE_INDEX_BUFFER);
+
+			m_Fence.Job();
+
 
 			m_IndexBuffer.CreateIndexBufferView();
 
 			m_Texture.Create();
 
-			que.Join(m_Texture.GetTextureBuffer(), m_Texture.GetTextureUploadBuffer(), m_Texture.GetSubData().size(), m_Texture.GetSubData());
-			m_Fence.Signal();
-			m_Fence.Wait(INFINITE);
+			que.Join(m_Texture.GetTextureBuffer(), m_Texture.GetTextureUploadBuffer(), m_Texture.GetSubData().size(), m_Texture.GetSubData(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			m_Fence.Job();
+
 			m_Texture.DescriptorHeap();
 			// Create descriptor in the heap
 			m_Texture.ShaderResourceViewDesc();
@@ -51,6 +52,7 @@ namespace Fraple7
 		float step = 0.01f;
 		void Renderer::Render()
 		{
+			Update();
 			m_CurrentBackBufferIndex = m_PipeLine.GetSwapChain().GetSwapChain()->GetCurrentBackBufferIndex();
 
 			auto& BackBuffer = m_PipeLine.GetBackBuffer()[m_CurrentBackBufferIndex];
@@ -126,11 +128,35 @@ namespace Fraple7
 				m_Fence.Signal();
 				// present frame
 				m_PipeLine.GetSwapChain().Sync(0,0);
-
 				//wait for command list / allocator to become free
 				m_Fence.Wait(INFINITE);
 			}
 			t += step;
+		}
+
+		void Renderer::Update()
+		{
+			static uint64_t frameCounter = 0;
+			static double elapsedSeconds = 0.0;
+			static std::chrono::high_resolution_clock clock;
+			static auto t0 = clock.now();
+
+			frameCounter++;
+			auto t1 = clock.now();
+			auto deltaTime = t1 - t0;
+			t0 = t1;
+
+			elapsedSeconds += deltaTime.count() * 1e-9;
+			if (elapsedSeconds > 1.0)
+			{
+				char buffer[500];
+				auto fps = frameCounter / elapsedSeconds;
+				sprintf_s(buffer, 500, "FPS: %f\n", fps);
+				OutputDebugString(buffer);
+
+				frameCounter = 0;
+				elapsedSeconds = 0.0;
+			}
 		}
 
 	}

@@ -63,14 +63,16 @@ namespace Fraple7
 			m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_RtDescriptorHeap)) >> statusCode;
 
 			m_RtvDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-			m_BackBuffers.resize(m_BufferCount);
+			m_BackBuffers.reserve(m_BufferCount);
 
 			{
 				CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RtDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
 				for (size_t i = 0; i < m_BufferCount; i++)
 				{
-					m_Swapchain.GetSwapChain()->GetBuffer(i, IID_PPV_ARGS(&m_BackBuffers[i])) >> statusCode;
+					ComPtr<ID3D12Resource> backbuffer;
+					m_Swapchain.GetSwapChain()->GetBuffer(i, IID_PPV_ARGS(&backbuffer)) >> statusCode;
+					m_BackBuffers.emplace_back(backbuffer);
 					m_Device->CreateRenderTargetView(m_BackBuffers[i].Get(), nullptr, rtvHandle);
 					rtvHandle.Offset(m_RtvDescriptorSize);
 				}

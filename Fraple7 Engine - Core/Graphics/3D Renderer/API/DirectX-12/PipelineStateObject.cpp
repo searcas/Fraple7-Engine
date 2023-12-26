@@ -4,7 +4,6 @@
 #include "Graphics/3D Renderer/API/DirectX-12/PipelineStateObject.h"
 #include "Graphics/3D Renderer/API/DirectX-12/Inputlayout.h"
 #include "Graphics/3D Renderer/API/DirectX-12/ShadersLoader.h"
-
 namespace Fraple7
 {
 	namespace Core

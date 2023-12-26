@@ -118,7 +118,7 @@ namespace Fraple7
 		{
 			HRESULT result;
 			// Register the window class.
-			const wchar_t CLASS_NAME[] = L"Fraple7 Studio";
+			const char CLASS_NAME[] = "Fraple7 Studio";
 
 			WNDCLASS wc = { };
 
@@ -133,7 +133,7 @@ namespace Fraple7
 			m_Hwnd = CreateWindowEx(
 				0,								// Optional window styles.
 				CLASS_NAME,                     // Window class
-				L"Fraple7 Studio",				// Window text
+				"Fraple7 Studio",				// Window text
 				WS_OVERLAPPEDWINDOW,            // Window style
 
 				// Size and position

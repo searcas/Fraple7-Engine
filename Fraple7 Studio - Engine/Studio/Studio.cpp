@@ -26,7 +26,7 @@ int wWinMain(
 	}
 	catch (...) 
 	{
-		MessageBox(nullptr, L"No details available", L"Unknown Excaption", MB_OK | MB_ICONEXCLAMATION);
+		MessageBox(nullptr, "No details available", "Unknown Excaption", MB_OK | MB_ICONEXCLAMATION);
 	}
 
 	return 0;

@@ -17,11 +17,12 @@ namespace Fraple7
 			Renderer(const class Window& window);
 			~Renderer() = default;
 			void Render();
+			void Update();
 		private:
 			PipeLineDx m_PipeLine;
 			VertexBuffer m_VertexBuffer;
-			uint32_t m_BufferCount;
-			uint32_t m_CurrentBackBufferIndex;
+			uint32_t m_BufferCount = 0;
+			uint32_t m_CurrentBackBufferIndex = 0;
 			CD3DX12_RECT m_ScissorRect;
 			CD3DX12_VIEWPORT m_Viewport;
 			FenceDx m_Fence;
