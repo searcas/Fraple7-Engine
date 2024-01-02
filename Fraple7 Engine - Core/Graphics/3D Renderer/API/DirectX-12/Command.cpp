@@ -48,9 +48,7 @@ namespace Fraple7
 		{
 			m_ComAll->Reset() >> statusCode;
 			m_ComList->Reset(m_ComAll.Get(), nullptr) >> statusCode;
-			
 			m_ComList->CopyResource(dst.Get(), src.Get());
-			Transition(dst, TransitionState);
 			m_ComList->Close() >> statusCode;
 
 			// Submit command list to queue as array with single element

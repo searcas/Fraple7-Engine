@@ -7,6 +7,15 @@ namespace Fraple7
 {
 	namespace Core
 	{
+		//TODO
+		// Make proper Rendering Technique 
+		// as
+		// ExecuteIndirect
+		// FrameBuffering sample
+		// for number of backbuffers - >
+		//https ://youtu.be/E3wTajGZOsA?si=HMrmKn0jrgJeZ_VW>
+		//https ://jackmin.home.blog/2018/12/14/swapchains-present-and-present-latency/
+
 		Renderer::Renderer(const Window& window) 
 			: m_PipeLine(window, 6), m_Fence(m_PipeLine.GetCommandQueue()), m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice())
 		{
@@ -116,6 +125,7 @@ namespace Fraple7
 			}
 			// submit command list
 			auto& cQueue = m_PipeLine.GetCommandQueue().GetCmdQueue();
+			
 			{
 				ComList->Close() >> statusCode;
 				ID3D12CommandList* const CommandList[] = { ComList.Get() };
@@ -127,7 +137,7 @@ namespace Fraple7
 				// insert fence to mark command list completion
 				m_Fence.Signal();
 				// present frame
-				m_PipeLine.GetSwapChain().Sync(0,0);
+				m_PipeLine.GetSwapChain().Sync(1,0);
 				//wait for command list / allocator to become free
 				m_Fence.Wait(INFINITE);
 			}
@@ -146,12 +156,15 @@ namespace Fraple7
 			auto deltaTime = t1 - t0;
 			t0 = t1;
 
+			//Converting from nanoseconds to seconds 1 x 10^-9
 			elapsedSeconds += deltaTime.count() * 1e-9;
+
+			// Print every second only
 			if (elapsedSeconds > 1.0)
 			{
-				char buffer[500];
+				char buffer[128];
 				auto fps = frameCounter / elapsedSeconds;
-				sprintf_s(buffer, 500, "FPS: %f\n", fps);
+				sprintf_s(buffer, 128, "FPS: %f\n", fps);
 				OutputDebugString(buffer);
 
 				frameCounter = 0;

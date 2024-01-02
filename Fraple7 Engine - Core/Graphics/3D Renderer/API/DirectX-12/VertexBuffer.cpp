@@ -13,7 +13,7 @@ namespace Fraple7
 		void VertexBuffer::Create(const ComPtr<ID3D12Device2>& device)
 		{
 			
-			ResourceMgr::Allocate(device, m_VertexBuffer, sizeof(s_VertexData), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COPY_DEST);
+			ResourceMgr::Allocate(device, m_VertexBuffer, sizeof(s_VertexData), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
 			ResourceMgr::Allocate(device, m_VertexUploadBuffer, sizeof(s_VertexData), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 			Vertex* mappedVertexData = nullptr;
