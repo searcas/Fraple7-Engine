@@ -14,10 +14,18 @@ namespace Fraple7
 		class Renderer
 		{
 		public:
-			Renderer(const class Window& window);
+			//This should be in some Event class ...
+			void Resize(bool);
+			void SetFullScreen(bool fullScreen);
+		private:
+			bool m_FullScreen = false;
+		public:
+			Renderer(Window& window);
 			~Renderer() = default;
 			void Render();
 			void Update();
+		private:
+			Renderer& GetInstance() { return *this; }
 		private:
 			PipeLineDx m_PipeLine;
 			VertexBuffer m_VertexBuffer;
@@ -26,10 +34,12 @@ namespace Fraple7
 			CD3DX12_RECT m_ScissorRect;
 			CD3DX12_VIEWPORT m_Viewport;
 			FenceDx m_Fence;
+			std::vector<uint64_t> m_FenceValues;
 			PSO m_PSO;
 			Projection m_Projection;
 			IndexBuffer m_IndexBuffer;
 			Texture m_Texture;
+			Window& m_Window;
 		};
 
 	}

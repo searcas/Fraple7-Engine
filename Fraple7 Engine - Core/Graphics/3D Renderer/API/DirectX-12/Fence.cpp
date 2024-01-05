@@ -48,10 +48,17 @@ namespace Fraple7
 		{
 			m_CQueue.GetCmdQueue()->Signal(m_Fence.Get(), ++m_FenceVal) >> statusCode;
 		}
-		void FenceDx::Job()
+		void FenceDx::Complete()
 		{
 			Signal();
 			Wait(INFINITE);
+		}
+
+		uint64_t FenceDx::CompleteMultiFrame()
+		{
+			Signal();
+			Wait(INFINITE);
+			return m_FenceVal;
 		}
 	}
 }

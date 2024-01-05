@@ -6,12 +6,12 @@ namespace Fraple7
 		class Engine
 		{
 		public:
-			Engine(const class Window& window);
+			Engine(class Window& window);
 			~Engine();
 			int Active();
 			int Init();
 		private:
-			const class Window& m_Window;
+			class Window& m_Window;
 			std::atomic_bool m_Stop = false;
 		};
 

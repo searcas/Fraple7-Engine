@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Renderer.h"
 #include "Studio/Platform/Abstract/Window.h"
+#include "Studio/Platform/Windows/Window.h"
 #include "Utilities/Common/Common.h"
 #include <DirectXMath.h>
 namespace Fraple7
@@ -15,30 +16,35 @@ namespace Fraple7
 		// for number of backbuffers - >
 		//https ://youtu.be/E3wTajGZOsA?si=HMrmKn0jrgJeZ_VW>
 		//https ://jackmin.home.blog/2018/12/14/swapchains-present-and-present-latency/
+		// https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12ExecuteIndirect/src/DXSample.cpp
 
-		Renderer::Renderer(const Window& window) 
-			: m_PipeLine(window, 6), m_Fence(m_PipeLine.GetCommandQueue()), m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice())
+
+		Renderer::Renderer(Window& window)
+			: m_Window(window), m_PipeLine(window, 6),
+			m_Fence(m_PipeLine.GetCommandQueue()),
+			m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice())
 		{
+			m_FenceValues.reserve(m_PipeLine.GetBufferCount());
 			m_Fence.Create(m_PipeLine.GetDevice());
 			m_Fence.CreateAnEvent();
 			m_VertexBuffer.Create(m_PipeLine.GetDevice());
-			
+
 			auto& ComList = m_PipeLine.GetCommandList().GetCommandList();
 			auto& ComAlloc = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
 			auto& ComQueue = m_PipeLine.GetCommandQueue().GetCmdQueue();
-			Commands::Queue que(ComList,ComAlloc,ComQueue);
+			Commands::Queue que(ComList, ComAlloc, ComQueue);
 			que.Join(m_VertexBuffer.GetVertexBuffer(), m_VertexBuffer.GetVertexUploadBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 			// insert fence to detect when upload is complete
-			m_Fence.Job();
+			m_Fence.Complete();
 
 
 			m_VertexBuffer.CreateVertexBufferView();
 			m_IndexBuffer.Create(m_PipeLine.GetDevice());
-			
+
 			que.Join(m_IndexBuffer.GetIndexBuffer(), m_IndexBuffer.GetIndexUploadBuffer(), D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
-			m_Fence.Job();
+			m_Fence.Complete();
 
 
 			m_IndexBuffer.CreateIndexBufferView();
@@ -46,7 +52,7 @@ namespace Fraple7
 			m_Texture.Create();
 
 			que.Join(m_Texture.GetTextureBuffer(), m_Texture.GetTextureUploadBuffer(), m_Texture.GetSubData().size(), m_Texture.GetSubData(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			m_Fence.Job();
+			m_Fence.Complete();
 
 			m_Texture.DescriptorHeap();
 			// Create descriptor in the heap
@@ -57,6 +63,7 @@ namespace Fraple7
 			m_Viewport = CD3DX12_VIEWPORT{ 0.0f, 0.0f, float(window.GetWidth()), float(window.GetHeight()) };
 			m_Projection.SetView();
 		}
+	
 		float t = 0.0f;
 		float step = 0.01f;
 		void Renderer::Render()
@@ -134,16 +141,42 @@ namespace Fraple7
 				
 			}
 			{
-				// insert fence to mark command list completion
-				m_Fence.Signal();
 				// present frame
-				m_PipeLine.GetSwapChain().Sync(1,0);
-				//wait for command list / allocator to become free
-				m_Fence.Wait(INFINITE);
+				m_PipeLine.GetSwapChain().Sync(0,0);
+				
+				// insert fence to mark command list completion
+				m_FenceValues.emplace_back(m_Fence.CompleteMultiFrame());
 			}
 			t += step;
 		}
+		void Renderer::Resize(bool resize)
+		{
+			if (resize)
+			{
+				m_Window.SetWidth(std::max(400u, m_Window.GetWidth()));
+				m_Window.SetHeight(std::max(600u, m_Window.GetWidth()));
+				m_Fence.CompleteMultiFrame();
+				for (size_t i = 0; i < GetInstance().m_BufferCount; i++)
+				{
+					m_PipeLine.GetBackBuffer()[i].Reset();
+					m_FenceValues[i] = m_FenceValues[m_CurrentBackBufferIndex];
+				}
+				DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+				const auto& SwapChain = m_PipeLine.GetSwapChain().GetSwapChain();
+				SwapChain->GetDesc(&swapChainDesc) >> statusCode;
 
+				SwapChain->ResizeBuffers(m_BufferCount, m_Window.GetWidth(), m_Window.GetWidth(),
+					swapChainDesc.BufferDesc.Format, swapChainDesc.Flags) >> statusCode;
+
+				m_CurrentBackBufferIndex = SwapChain->GetCurrentBackBufferIndex();
+				m_PipeLine.RenderTargetView();
+			}
+		}
+		void Renderer::SetFullScreen(bool fullScreen)
+		{
+			m_Window.SetFullScreen(fullScreen);
+		}
+		
 		void Renderer::Update()
 		{
 			static uint64_t frameCounter = 0;

@@ -10,7 +10,7 @@ namespace Fraple7
 {
 	namespace Core
 	{
-		Engine::Engine(const Window& Window) : m_Window(Window)
+		Engine::Engine(Window& Window) : m_Window(Window)
 		{
 			Init();
 		}

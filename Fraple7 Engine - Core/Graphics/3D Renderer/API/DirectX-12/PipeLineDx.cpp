@@ -18,8 +18,9 @@ namespace Fraple7
 #else 
 #define DebugLayer();
 #endif
-		PipeLineDx::PipeLineDx(const Window& window, uint32_t BufferCount) : 
-			m_Window(window), m_BufferCount(BufferCount), m_DepthBuffer(m_Device, window)
+		PipeLineDx::PipeLineDx(Window& window, uint32_t BufferCount) : 
+			m_Window(window), m_BufferCount(BufferCount), m_DepthBuffer(m_Device, window), 
+			m_Swapchain(window)
 		{
 			Create();
 			m_DepthBuffer.Init();
@@ -42,7 +43,7 @@ namespace Fraple7
 			};
 			m_cQueue.SetCommandQueueDescriptor(desc);
 			m_cQueue.Create(m_Device);
-			m_Swapchain.Create(m_Window, m_DxGiFactory, m_cQueue, m_BufferCount);
+			m_Swapchain.Create(m_DxGiFactory, m_cQueue, m_BufferCount);
 			RenderTargetView();
 			return FPL_SUCCESS;
 		}
@@ -91,12 +92,12 @@ namespace Fraple7
 			Status = FPL_SUCCESS;
 			return Status;
 		}
-		uint32_t PipeLineDx::SwapChain::Create(const class Window& window, ComPtr<IDXGIFactory4>& DxGiFactory, Commands::QueueDx& Queue,uint32_t BufferCount)
+		uint32_t PipeLineDx::SwapChain::Create(ComPtr<IDXGIFactory4>& DxGiFactory, Commands::QueueDx& Queue,uint32_t BufferCount)
 		{
 			uint32_t Status = FPL_PIPELINE_SWAP_CHAIN_ERROR;
 			const DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {
-				.Width = window.GetWidth(),
-				.Height = window.GetHeight(),
+				.Width = m_Window.GetWidth(),
+				.Height = m_Window.GetHeight(),
 				.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
 				.Stereo = FALSE,
 				.SampleDesc = {
@@ -111,12 +112,15 @@ namespace Fraple7
 				.Flags = 0 //DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING
 			};
 			DxGiFactory->CreateSwapChainForHwnd(Queue.GetCmdQueue().Get(),
-				WinWindow::GetHandle(),
+				m_Window.GetHandle(),
 				&swapChainDesc, nullptr, nullptr, &m_SwapChain) >> statusCode;
 			m_SwapChain.As(&m_SwapChain2) >> statusCode;
 
 			Status = FPL_SUCCESS
 			return Status;
+		}
+		PipeLineDx::SwapChain::SwapChain(Window& window) : m_Window(window)
+		{
 		}
 		PipeLineDx::SwapChain::~SwapChain()
 		{
@@ -126,5 +130,6 @@ namespace Fraple7
 		{
 			m_SwapChain->Present(interval, flags) >> statusCode;
 		}
+		
 	}
 }

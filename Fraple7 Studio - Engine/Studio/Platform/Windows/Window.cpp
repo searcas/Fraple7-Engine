@@ -7,15 +7,29 @@ namespace Fraple7
 {
 	namespace Core
 	{
-		static LRESULT HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam) noexcept
+		LRESULT CALLBACK WinWindow::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam) noexcept
 		{
-
+			bool alt = (::GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
 			switch (msg)
 			{
+				case WM_SIZE:
+				{
+					RECT currentSize = {};
+					::GetClientRect(hwnd, &currentSize);
+					int width = currentSize.right - currentSize.left;
+					int height = currentSize.top - currentSize.bottom;
+					Resize(width, height);
+					break;
+				}
 				case WM_CLOSE:
 				{
 					PostQuitMessage(0);
-					return 0;
+					break;
+				}
+				case WM_DESTROY:
+				{
+					PostQuitMessage(0);
+					break;
 				}
 				case WM_KILLFOCUS:
 				{
@@ -25,14 +39,31 @@ namespace Fraple7
 					//confine/free cursor on window to foreground/background if cursor disabled
 
 					break;
-					/********* KEYBOARD *********/
-				case WM_KEYDOWN:
-					// syskey commands need to be handled to track ALT key (VK_MENU) and F10
+				/********* KEYBOARD *********/
+				// syskey commands need to be handled to track ALT key (VK_MENU) and F10
 				case WM_SYSKEYDOWN:
+				case WM_KEYDOWN:
 				{
-
+					switch (wParam)
+					{
+					case 'G':
+						// TODO
+						// Enable vSYNC here
+						break;
+					case VK_RETURN:
+						if (alt)
+						{
+					case VK_F11:
+						SetFullScreen(true);
+					case VK_F4:
+						PostQuitMessage(0);
+						}
+						break;
+					}
 					break;
 				}
+				case WM_SYSCHAR:
+					break;
 				case WM_KEYUP:
 				case WM_SYSKEYUP:
 				{
@@ -84,30 +115,32 @@ namespace Fraple7
 
 					break;
 				}
+				default:
+					return DefWindowProc(hwnd, msg, wParam, lparam);
 			}
 			return DefWindowProc(hwnd, msg, wParam, lparam);
 		}
-		static LRESULT HandleMsgThunk(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+		LRESULT CALLBACK WinWindow::HandleMsgThunk(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			//retrieve ptr to window isntance
-			Window* const pwnd = reinterpret_cast<Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+			WinWindow* const pwnd = reinterpret_cast<WinWindow*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 			//forward messsage to window instance handler
-			return HandleMsg(hwnd, msg, wParam, lParam);
+			return pwnd->HandleMsg(hwnd, msg, wParam, lParam);
 		}
-		LRESULT HandleMsgSetup(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+		LRESULT CALLBACK WinWindow::HandleMsgSetup(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		{
 			// use create parameter passed in from CreateWindow() to store window class pointer at WinAPI side
 			if (msg == WM_NCCREATE)
 			{
 				// extract ptr to window class from creation data
 				const CREATESTRUCTW* const pCreate = reinterpret_cast<CREATESTRUCTW*>(lParam);
-				Window* const pWnd = static_cast<Window*>(pCreate->lpCreateParams);
+				WinWindow* const pWnd = static_cast<WinWindow*>(pCreate->lpCreateParams);
 				// set WinAPI-managed user data to store ptr to window instance
 				SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
 				// set message proc to normal (non-setup) handler now that setup is finished
-				SetWindowLongPtr(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&HandleMsgThunk));
+				SetWindowLongPtr(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&WinWindow::HandleMsgThunk));
 				//forward message to window instance handler
-				return HandleMsg(hwnd, msg, wParam, lParam);
+				return pWnd->HandleMsg(hwnd, msg, wParam, lParam);
 			}
 			//if we get a message before the WM_NCCREATE message, handle with default handler
 
@@ -120,17 +153,21 @@ namespace Fraple7
 			// Register the window class.
 			const char CLASS_NAME[] = "Fraple7 Studio";
 
-			WNDCLASS wc = { };
 
-			wc.lpfnWndProc = HandleMsgSetup;
-			wc.hInstance = NULL;
-			wc.lpszClassName = CLASS_NAME;
+			m_WC.lpfnWndProc = &HandleMsgSetup;
+			m_WC.hInstance = NULL;
+			m_WC.lpszClassName = CLASS_NAME;
 
-			RegisterClass(&wc);
+			RegisterClass(&m_WC);
 
+			m_wRect.left = 100;
+			m_wRect.right = width + m_wRect.left;
+			m_wRect.top = 100;
+			m_wRect.bottom = height + m_wRect.top;
+			FPL_CHECK_STATUS_OK(&m_wRect, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE);
+		
 			// Create the window.
-
-			m_Hwnd = CreateWindowEx(
+			m_hWnd = CreateWindowEx(
 				0,								// Optional window styles.
 				CLASS_NAME,                     // Window class
 				"Fraple7 Studio",				// Window text
@@ -142,15 +179,11 @@ namespace Fraple7
 				NULL,       // Parent window    
 				NULL,       // Menu
 				NULL,		// Instance handle
-				NULL        // Additional application data
+				this        // Additional application data
 			);
 
-			if (m_Hwnd == NULL)
-			{
-				(result = GetLastError()) >> statusCode;
-			}
-			else
-				ShowWindow(m_Hwnd, SW_SHOW);
+			FPL_CHECK_STATUS_OK(m_hWnd)
+			ShowWindow(m_hWnd, SW_SHOW);
 		}
 
 		WinWindow::~WinWindow()
@@ -160,9 +193,60 @@ namespace Fraple7
 		void WinWindow::Initialize()
 		{
 		}
-		HWND WinWindow::GetHandle()
+
+		void WinWindow::SetFullScreen(bool setFullScreen)
 		{
-			return m_Hwnd;
+			if (setFullScreen != m_FullScreen)
+			{
+				m_FullScreen = setFullScreen;
+				if (m_FullScreen)
+				{
+					m_FullScreen = true;
+					FPL_CHECK_STATUS_OK(GetWindowRect(m_hWnd, &m_wRect));
+					UINT windowStyle = WS_OVERLAPPEDWINDOW & ~(WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+					FPL_CHECK_STATUS_OK(::SetWindowLongW(m_hWnd, GWL_STYLE, windowStyle));
+					// Query the name of the nearest display device for the window.
+					// This is required to set the fullscreen dimensions of the window
+					// when using a multi-monitor setup.
+					HMONITOR hMonitor = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+					MONITORINFOEX monitorInfo = {};
+					monitorInfo.cbSize = sizeof(MONITORINFOEX);
+					FPL_CHECK_STATUS_OK(GetMonitorInfo(hMonitor, &monitorInfo));
+
+					FPL_CHECK_STATUS_OK(::SetWindowPos(m_hWnd, HWND_TOP,
+						monitorInfo.rcMonitor.left,
+						monitorInfo.rcMonitor.top,
+						monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
+						monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+						SWP_FRAMECHANGED | SWP_NOACTIVATE));
+
+					FPL_CHECK_STATUS_OK(::ShowWindow(m_hWnd, SW_MAXIMIZE));
+				}
+				else
+				{
+					// Restore all the window decorators.
+					::SetWindowLong(m_hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+
+					::SetWindowPos(m_hWnd, HWND_NOTOPMOST,
+						m_wRect.left,
+						m_wRect.top,
+						m_wRect.right - m_wRect.left,
+						m_wRect.bottom - m_wRect.top,
+						SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
+					::ShowWindow(m_hWnd, SW_NORMAL);
+				}
+			}
+			
+		}
+
+		bool WinWindow::Resize(uint32_t width, uint32_t height)
+		{
+			if (width != m_Width || height != m_Height)
+			{
+				return true;
+			}
+			return false;
 		}
 
 		uint32_t WinWindow::Run() const
@@ -170,7 +254,7 @@ namespace Fraple7
 			// Run the message loop.
 
 			MSG msg = { };
-			msg.hwnd = m_Hwnd;
+			msg.hwnd = m_hWnd;
 			while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE) > 0)
 			{
 				if (msg.message == WM_QUIT )

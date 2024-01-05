@@ -13,11 +13,19 @@ namespace Fraple7
 			~WinWindow();
 			void Initialize() override;
 			uint32_t Run()const override;
-			static HWND GetHandle();
-			static void SetInstance(HINSTANCE instance) { m_Hinst = instance; }
+			HWND GetHandle() const  override { return m_hWnd; }
+			HWND GetRect() { return m_hWnd; }
+			RECT GetWindowPosition() { return m_wRect; }
+			void SetFullScreen(bool) override;
+			bool Resize(uint32_t width, uint32_t height) override;
 		private:
-			static inline HWND m_Hwnd;
-			inline static HINSTANCE m_Hinst;
+			LRESULT CALLBACK HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam) noexcept;
+			static LRESULT HandleMsgThunk(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+			static LRESULT HandleMsgSetup(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		private:
+			HWND m_hWnd;
+			WNDCLASS m_WC = { };
+			RECT m_wRect; // Position of window
 		};
 	}
 }
