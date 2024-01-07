@@ -39,9 +39,6 @@
     <ClInclude Include="Utilities\Common\Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\3D Renderer\API\PipeLine\PipeLine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -84,6 +81,12 @@
     <ClInclude Include="Graphics\Texture\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\SwapChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Device.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Fraple7 Engine - Core.cpp">
@@ -102,9 +105,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Utilities\ErrorHandling\EngineErrorHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Graphics\3D Renderer\API\PipeLine\PipeLine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.cpp">
@@ -144,6 +144,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Texture\Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Device.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\SwapChain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

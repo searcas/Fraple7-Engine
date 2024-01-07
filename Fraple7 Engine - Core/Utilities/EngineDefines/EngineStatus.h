@@ -1,7 +1,7 @@
 #pragma once
 
 
-
+#define FPL_CHECK_SUCCESS(x) x == 0
 
 #define FPL_SUCCESS											0x00000000;
 #define FPL_GENERIC_ERROR									0x00000001;
@@ -18,6 +18,8 @@
 #define FPL_PIPELINE_SWAP_CHAIN_ERROR						0x0000F001;
 #define FPL_PIPELINE_RENDER_TARGET_VIEW_ERROR				0x0000F002;
 #define FPL_PIPELINE_COMMANDS_ERROR							0x0000F003;
+#define FPL_PIPELINE_DEVICE_ERROR							0x0000F004;
+
 
 
 

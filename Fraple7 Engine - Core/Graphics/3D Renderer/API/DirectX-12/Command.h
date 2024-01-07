@@ -5,33 +5,35 @@ namespace Fraple7
 {
 	namespace Core
 	{
-
+		class CommandMgr
+		{
+		public:
+			CommandMgr(const ComPtr<ID3D12GraphicsCommandList>&, const ComPtr<ID3D12CommandAllocator>&, const ComPtr<ID3D12CommandQueue>&);
+			void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, D3D12_RESOURCE_STATES);
+			void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData, D3D12_RESOURCE_STATES);
+			void Transition(const ComPtr<ID3D12Resource>& buffer, D3D12_RESOURCE_STATES state);
+			~CommandMgr() = default;
+		private:
+			const ComPtr<ID3D12GraphicsCommandList>& m_ComList;
+			const ComPtr<ID3D12CommandAllocator>& m_ComAll;
+			const ComPtr<ID3D12CommandQueue>& m_ComQ;
+		};
 		class Commands
 		{
 		public:
-			class Queue
-			{
-			public:
-				Queue(const ComPtr<ID3D12GraphicsCommandList>&, const ComPtr<ID3D12CommandAllocator>&, const ComPtr<ID3D12CommandQueue>& );
-				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, D3D12_RESOURCE_STATES);
-				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData, D3D12_RESOURCE_STATES );
-				void Transition(const ComPtr<ID3D12Resource>&buffer, D3D12_RESOURCE_STATES state);
-				~Queue() = default;
-			private:
-			private:
-				const ComPtr<ID3D12GraphicsCommandList>& m_ComList;
-				const ComPtr<ID3D12CommandAllocator>& m_ComAll;
-				const ComPtr<ID3D12CommandQueue>& m_ComQ;
-			};
-
 			class QueueDx
 			{
 			public:
 				QueueDx() = default;
 				QueueDx(const D3D12_COMMAND_QUEUE_DESC& desc);
-				void SetCommandQueueDescriptor(const D3D12_COMMAND_QUEUE_DESC& desc);
-				uint32_t Create(ComPtr<ID3D12Device2>& device);
+				uint32_t Create(const ComPtr<ID3D12Device2>& device);
 				const ComPtr<ID3D12CommandQueue>& GetCmdQueue() const { return m_CommandQueue; }
+				
+				void SetCommandQueueDescriptor(const D3D12_COMMAND_QUEUE_DESC& desc);
+				D3D12_COMMAND_QUEUE_DESC SetDescriptionDirectNormal() const;
+				D3D12_COMMAND_QUEUE_DESC SetCustomDescription(D3D12_COMMAND_LIST_TYPE type,
+					INT priority, D3D12_COMMAND_QUEUE_FLAGS flags, UINT NodeMask) const;
+
 			private:
 				ComPtr<ID3D12CommandQueue> m_CommandQueue;
 				D3D12_COMMAND_QUEUE_DESC m_Desc;

@@ -1,46 +1,42 @@
 #include "pch.h"
 #include "Renderer.h"
-#include "Studio/Platform/Abstract/Window.h"
-#include "Studio/Platform/Windows/Window.h"
 #include "Utilities/Common/Common.h"
+#include "Graphics/3D Renderer/API/DirectX-12/SwapChain.h"
 #include <DirectXMath.h>
 namespace Fraple7
 {
 	namespace Core
 	{
-		//TODO
+		// TODO://
 		// Make proper Rendering Technique 
 		// as
 		// ExecuteIndirect
 		// FrameBuffering sample
 		// for number of backbuffers - >
-		//https ://youtu.be/E3wTajGZOsA?si=HMrmKn0jrgJeZ_VW>
-		//https ://jackmin.home.blog/2018/12/14/swapchains-present-and-present-latency/
+		// https ://youtu.be/E3wTajGZOsA?si=HMrmKn0jrgJeZ_VW>
+		// https ://jackmin.home.blog/2018/12/14/swapchains-present-and-present-latency/
 		// https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12ExecuteIndirect/src/DXSample.cpp
-
-
 		Renderer::Renderer(Window& window)
-			: m_Window(window), m_PipeLine(window, 6),
-			m_Fence(m_PipeLine.GetCommandQueue()),
-			m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice())
+			: m_Window((WinWindow&)window), 
+			m_PipeLine(window),
+			m_Fence(m_PipeLine.GetCommandQueue(),m_PipeLine.GetSwapChain().GetBufferCount()),
+			m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice().GetDevice())
 		{
-			m_FenceValues.reserve(m_PipeLine.GetBufferCount());
-			m_Fence.Create(m_PipeLine.GetDevice());
+			m_Fence.Create(m_PipeLine.GetDevice().GetDevice());
 			m_Fence.CreateAnEvent();
-			m_VertexBuffer.Create(m_PipeLine.GetDevice());
+			m_VertexBuffer.Create(m_PipeLine.GetDevice().GetDevice());
 
-			auto& ComList = m_PipeLine.GetCommandList().GetCommandList();
+			auto& ComList  = m_PipeLine.GetCommandList().GetCommandList();
 			auto& ComAlloc = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
 			auto& ComQueue = m_PipeLine.GetCommandQueue().GetCmdQueue();
-			Commands::Queue que(ComList, ComAlloc, ComQueue);
+			CommandMgr que(ComList, ComAlloc, ComQueue);
 			que.Join(m_VertexBuffer.GetVertexBuffer(), m_VertexBuffer.GetVertexUploadBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 			// insert fence to detect when upload is complete
 			m_Fence.Complete();
 
-
 			m_VertexBuffer.CreateVertexBufferView();
-			m_IndexBuffer.Create(m_PipeLine.GetDevice());
+			m_IndexBuffer.Create(m_PipeLine.GetDevice().GetDevice());
 
 			que.Join(m_IndexBuffer.GetIndexBuffer(), m_IndexBuffer.GetIndexUploadBuffer(), D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
@@ -58,7 +54,7 @@ namespace Fraple7
 			// Create descriptor in the heap
 			m_Texture.ShaderResourceViewDesc();
 
-			m_PSO.Create(m_PipeLine.GetDevice());
+			m_PSO.Create(m_PipeLine.GetDevice().GetDevice());
 			m_ScissorRect = CD3DX12_RECT{ 0,0, LONG_MAX, LONG_MAX };
 			m_Viewport = CD3DX12_VIEWPORT{ 0.0f, 0.0f, float(window.GetWidth()), float(window.GetHeight()) };
 			m_Projection.SetView();
@@ -71,14 +67,14 @@ namespace Fraple7
 			Update();
 			m_CurrentBackBufferIndex = m_PipeLine.GetSwapChain().GetSwapChain()->GetCurrentBackBufferIndex();
 
-			auto& BackBuffer = m_PipeLine.GetBackBuffer()[m_CurrentBackBufferIndex];
+			const auto& BackBuffer = m_PipeLine.GetSwapChain().GetBackBuffer()[m_CurrentBackBufferIndex];
 
 			auto& ComAll = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
 			ComAll->Reset() >> statusCode;
 			auto& ComList = m_PipeLine.GetCommandList().GetCommandList();
 			ComList->Reset(ComAll.Get(), nullptr) >> statusCode;
 
-			const CD3DX12_CPU_DESCRIPTOR_HANDLE rtv{ m_PipeLine.GetRTDescHeap()->GetCPUDescriptorHandleForHeapStart(),
+			const CD3DX12_CPU_DESCRIPTOR_HANDLE rtv{ m_PipeLine.GetSwapChain().GetRTDescHeap()->GetCPUDescriptorHandleForHeapStart(),
 														(INT)m_CurrentBackBufferIndex,m_PipeLine.GetRtDescSize() };
 			{
 				// transition buffer resource to render target state
@@ -95,7 +91,7 @@ namespace Fraple7
 
 				ComList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 			}
-			ComList->ClearDepthStencilView(m_PipeLine.GetDSVHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
+			ComList->ClearDepthStencilView(m_PipeLine.GetDSVHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr );
 			// Set Pipeline state
 			ComList->SetPipelineState(m_PSO.GetPLS().Get());
 			ComList->SetGraphicsRootSignature(m_PSO.GetRootSig().GetSignature().Get());
@@ -145,38 +141,12 @@ namespace Fraple7
 				m_PipeLine.GetSwapChain().Sync(0,0);
 				
 				// insert fence to mark command list completion
-				m_FenceValues.emplace_back(m_Fence.CompleteMultiFrame());
+				m_Fence.CompleteMultiFrame();
 			}
 			t += step;
 		}
-		void Renderer::Resize(bool resize)
-		{
-			if (resize)
-			{
-				m_Window.SetWidth(std::max(400u, m_Window.GetWidth()));
-				m_Window.SetHeight(std::max(600u, m_Window.GetWidth()));
-				m_Fence.CompleteMultiFrame();
-				for (size_t i = 0; i < GetInstance().m_BufferCount; i++)
-				{
-					m_PipeLine.GetBackBuffer()[i].Reset();
-					m_FenceValues[i] = m_FenceValues[m_CurrentBackBufferIndex];
-				}
-				DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-				const auto& SwapChain = m_PipeLine.GetSwapChain().GetSwapChain();
-				SwapChain->GetDesc(&swapChainDesc) >> statusCode;
 
-				SwapChain->ResizeBuffers(m_BufferCount, m_Window.GetWidth(), m_Window.GetWidth(),
-					swapChainDesc.BufferDesc.Format, swapChainDesc.Flags) >> statusCode;
 
-				m_CurrentBackBufferIndex = SwapChain->GetCurrentBackBufferIndex();
-				m_PipeLine.RenderTargetView();
-			}
-		}
-		void Renderer::SetFullScreen(bool fullScreen)
-		{
-			m_Window.SetFullScreen(fullScreen);
-		}
-		
 		void Renderer::Update()
 		{
 			static uint64_t frameCounter = 0;

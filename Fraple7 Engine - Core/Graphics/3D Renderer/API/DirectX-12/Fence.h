@@ -9,7 +9,7 @@ namespace Fraple7
 		class FenceDx
 		{
 		public:
-			FenceDx(const Commands::QueueDx&);
+			FenceDx(const Commands::QueueDx&, uint32_t bufferCount);
 			~FenceDx();
 			void Create(const ComPtr< ID3D12Device2>& device);
 			void CreateAnEvent();
@@ -23,10 +23,11 @@ namespace Fraple7
 			const ComPtr<ID3D12Fence>& GetFence()const { return m_Fence; }
 			uint64_t& GetFenceVal() { return m_FenceVal; }
 			const HANDLE& GetFenceEvent() const { return m_FenceEvent; }
-
+			std::vector<uint64_t>& GetFenceValues() { return m_FenceValues; }
 		private:
 			ComPtr<ID3D12Fence> m_Fence;
 			uint64_t m_FenceVal = 0;
+			std::vector<uint64_t>m_FenceValues;
 			HANDLE m_FenceEvent;
 			const Commands::QueueDx& m_CQueue;
 		};
