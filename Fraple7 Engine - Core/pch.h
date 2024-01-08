@@ -13,6 +13,8 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <memory>
+
 // add headers that you want to pre-compile here
 #include "framework.h"
 

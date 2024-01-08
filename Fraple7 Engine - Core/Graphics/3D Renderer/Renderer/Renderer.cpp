@@ -19,28 +19,29 @@ namespace Fraple7
 		Renderer::Renderer(Window& window)
 			: m_Window((WinWindow&)window), 
 			m_PipeLine(window),
-			m_Fence(m_PipeLine.GetCommandQueue(),m_PipeLine.GetSwapChain().GetBufferCount()),
-			m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice().GetDevice())
+			m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice()->GetDevice())
 		{
-			m_Fence.Create(m_PipeLine.GetDevice().GetDevice());
-			m_Fence.CreateAnEvent();
-			m_VertexBuffer.Create(m_PipeLine.GetDevice().GetDevice());
+			m_Fence = std::make_shared<FenceDx>(m_PipeLine.GetCommandQueue(), m_PipeLine.GetSwapChain()->GetBufferCount());
+			m_Window.SetFenceRef(m_Fence);
+			m_Fence->Create(m_PipeLine.GetDevice()->GetDevice());
+			m_Fence->CreateAnEvent();
+			m_VertexBuffer.Create(m_PipeLine.GetDevice()->GetDevice());
 
 			auto& ComList  = m_PipeLine.GetCommandList().GetCommandList();
 			auto& ComAlloc = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
-			auto& ComQueue = m_PipeLine.GetCommandQueue().GetCmdQueue();
+			auto& ComQueue = m_PipeLine.GetCommandQueue()->GetCmdQueue();
 			CommandMgr que(ComList, ComAlloc, ComQueue);
 			que.Join(m_VertexBuffer.GetVertexBuffer(), m_VertexBuffer.GetVertexUploadBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 			// insert fence to detect when upload is complete
-			m_Fence.Complete();
+			m_Fence->Complete();
 
 			m_VertexBuffer.CreateVertexBufferView();
-			m_IndexBuffer.Create(m_PipeLine.GetDevice().GetDevice());
+			m_IndexBuffer.Create(m_PipeLine.GetDevice()->GetDevice());
 
 			que.Join(m_IndexBuffer.GetIndexBuffer(), m_IndexBuffer.GetIndexUploadBuffer(), D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
-			m_Fence.Complete();
+			m_Fence->Complete();
 
 
 			m_IndexBuffer.CreateIndexBufferView();
@@ -48,13 +49,13 @@ namespace Fraple7
 			m_Texture.Create();
 
 			que.Join(m_Texture.GetTextureBuffer(), m_Texture.GetTextureUploadBuffer(), m_Texture.GetSubData().size(), m_Texture.GetSubData(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			m_Fence.Complete();
+			m_Fence->Complete();
 
 			m_Texture.DescriptorHeap();
 			// Create descriptor in the heap
 			m_Texture.ShaderResourceViewDesc();
 
-			m_PSO.Create(m_PipeLine.GetDevice().GetDevice());
+			m_PSO.Create(m_PipeLine.GetDevice()->GetDevice());
 			m_ScissorRect = CD3DX12_RECT{ 0,0, LONG_MAX, LONG_MAX };
 			m_Viewport = CD3DX12_VIEWPORT{ 0.0f, 0.0f, float(window.GetWidth()), float(window.GetHeight()) };
 			m_Projection.SetView();
@@ -65,17 +66,17 @@ namespace Fraple7
 		void Renderer::Render()
 		{
 			Update();
-			m_CurrentBackBufferIndex = m_PipeLine.GetSwapChain().GetSwapChain()->GetCurrentBackBufferIndex();
+			m_CurrentBackBufferIndex = m_PipeLine.GetSwapChain()->GetSwapChain()->GetCurrentBackBufferIndex();
 
-			const auto& BackBuffer = m_PipeLine.GetSwapChain().GetBackBuffer()[m_CurrentBackBufferIndex];
+			auto& BackBuffer = m_PipeLine.GetSwapChain()->GetBackBuffer()[m_CurrentBackBufferIndex];
 
 			auto& ComAll = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
 			ComAll->Reset() >> statusCode;
 			auto& ComList = m_PipeLine.GetCommandList().GetCommandList();
 			ComList->Reset(ComAll.Get(), nullptr) >> statusCode;
 
-			const CD3DX12_CPU_DESCRIPTOR_HANDLE rtv{ m_PipeLine.GetSwapChain().GetRTDescHeap()->GetCPUDescriptorHandleForHeapStart(),
-														(INT)m_CurrentBackBufferIndex,m_PipeLine.GetRtDescSize() };
+			const CD3DX12_CPU_DESCRIPTOR_HANDLE rtv{ m_PipeLine.GetSwapChain()->GetRTDescHeap()->GetCPUDescriptorHandleForHeapStart(),
+														(INT)m_CurrentBackBufferIndex, m_PipeLine.GetSwapChain()->GetRenderTargetSize() };
 			{
 				// transition buffer resource to render target state
 				const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(BackBuffer.Get(), 
@@ -127,7 +128,7 @@ namespace Fraple7
 				ComList->ResourceBarrier(1, &barrier);
 			}
 			// submit command list
-			auto& cQueue = m_PipeLine.GetCommandQueue().GetCmdQueue();
+			auto& cQueue = m_PipeLine.GetCommandQueue()->GetCmdQueue();
 			
 			{
 				ComList->Close() >> statusCode;
@@ -138,10 +139,10 @@ namespace Fraple7
 			}
 			{
 				// present frame
-				m_PipeLine.GetSwapChain().Sync(0,0);
+				m_PipeLine.GetSwapChain()->Sync(0,0);
 				
 				// insert fence to mark command list completion
-				m_Fence.CompleteMultiFrame();
+				m_Fence->CompleteMultiFrame();
 			}
 			t += step;
 		}

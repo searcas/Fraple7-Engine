@@ -12,9 +12,6 @@ namespace Fraple7
 {
 	namespace Core
 	{
-	/*	class Device;
-		class SwapChain;*/
-
 		class PipeLineDx
 		{
 		private:
@@ -24,27 +21,25 @@ namespace Fraple7
 			PipeLineDx() = default;
 			~PipeLineDx();
 			uint32_t Create();
-			const CD3DX12_CPU_DESCRIPTOR_HANDLE& GetDSVHandle() { return m_DepthBuffer.GetDSVHandle(); }
+			const CD3DX12_CPU_DESCRIPTOR_HANDLE& GetDSVHandle() { return m_DepthBuffer->GetDSVHandle(); }
 		public:
 			const Commands::Allocator& GetCommandAllocator() const { return m_CommandAllocator; }
 			const Commands::List& GetCommandList() const { return m_CommandList; }
-			const Commands::QueueDx& GetCommandQueue() const { return m_cQueue; }
-			const UINT& GetRtDescSize() { return m_RtvDescriptorSize; }
-			Device& GetDevice(); 
-			SwapChain& GetSwapChain();
+			const std::shared_ptr<Commands::QueueDx>& GetCommandQueue() const { return m_cQueue; }
+			std::shared_ptr<Device>& GetDevice();
+			std::shared_ptr<SwapChain>& GetSwapChain();
 		public:
 
 		private:
 			uint32_t Commands() ;
 		private:
-			Device m_Device;
-			SwapChain m_SwapChain;
-			UINT m_RtvDescriptorSize;
+			std::shared_ptr<Device>m_Device;
+			std::shared_ptr<SwapChain> m_SwapChain;
 			Commands::Allocator m_CommandAllocator;
 			Commands::List m_CommandList;
-			Commands::QueueDx m_cQueue;
-			Window& m_Window;
-			DepthBuffer m_DepthBuffer;
+			std::shared_ptr<Commands::QueueDx> m_cQueue;
+			WinWindow& m_Window;
+			std::unique_ptr<DepthBuffer> m_DepthBuffer;
 		};
 
 	}

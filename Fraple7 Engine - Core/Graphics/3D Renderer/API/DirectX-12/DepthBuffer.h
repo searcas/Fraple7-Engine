@@ -9,7 +9,6 @@ namespace Fraple7
 		{
 		public:
 			DepthBuffer(const ComPtr<ID3D12Device2>& device, const class Window& window);
-
 			~DepthBuffer();
 			void Init();
 			const CD3DX12_CPU_DESCRIPTOR_HANDLE& GetDSVHandle() { return m_DsvHandle; }

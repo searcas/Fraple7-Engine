@@ -27,7 +27,7 @@ namespace Fraple7
 			uint32_t m_CurrentBackBufferIndex = 0;
 			CD3DX12_RECT m_ScissorRect;
 			CD3DX12_VIEWPORT m_Viewport;
-			FenceDx m_Fence;
+			std::shared_ptr<FenceDx> m_Fence;
 			PSO m_PSO;
 			Projection m_Projection;
 			IndexBuffer m_IndexBuffer;

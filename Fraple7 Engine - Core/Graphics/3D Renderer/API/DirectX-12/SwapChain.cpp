@@ -18,10 +18,10 @@ namespace Fraple7
 				.NumDescriptors = m_BufferCount,
 				.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE
 			};
-			m_Device.Construct();
-			m_Device.GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_RtDescriptorHeap)) >> statusCode;
+			m_Device->Construct();
+			m_Device->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_RtDescriptorHeap)) >> statusCode;
 			 
-			UINT DescriptorSize = m_Device.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			m_RenderTargetSize = m_Device->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 			m_BackBuffers.resize(m_BufferCount);
 
 			{
@@ -31,9 +31,9 @@ namespace Fraple7
 				{
 					ComPtr<ID3D12Resource> backbuffer;
 					m_SwapChain4->GetBuffer(i, IID_PPV_ARGS(&backbuffer)) >> statusCode;
-					m_Device.GetDevice()->CreateRenderTargetView(backbuffer.Get(), nullptr, rtvHandle);
+					m_Device->GetDevice()->CreateRenderTargetView(backbuffer.Get(), nullptr, rtvHandle);
 					m_BackBuffers[i] = backbuffer;
-					rtvHandle.Offset(DescriptorSize);
+					rtvHandle.Offset(m_RenderTargetSize);
 				}
 
 			}
@@ -41,7 +41,7 @@ namespace Fraple7
 			Status = FPL_SUCCESS;
 			return Status;
 		}
-		uint32_t SwapChain::Create(Commands::QueueDx& Queue)
+		uint32_t SwapChain::Create(std::shared_ptr<Commands::QueueDx>& Queue)
 		{
 			uint32_t Status = FPL_PIPELINE_SWAP_CHAIN_ERROR;
 			const DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {
@@ -60,16 +60,16 @@ namespace Fraple7
 				.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
 				.Flags = 0 //DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING
 			};
-			m_Device.GetDXGIFactory()->CreateSwapChainForHwnd(Queue.GetCmdQueue().Get(),
+			m_Device->GetDXGIFactory()->CreateSwapChainForHwnd(Queue->GetCmdQueue().Get(),
 				m_Window.GetHandle(),
 				&swapChainDesc, nullptr, nullptr, &m_SwapChain1) >> statusCode;
-			m_Device.GetDXGIFactory()->MakeWindowAssociation(m_Window.GetHandle(), DXGI_MWA_NO_ALT_ENTER) >> statusCode;
+			m_Device->GetDXGIFactory()->MakeWindowAssociation(m_Window.GetHandle(), DXGI_MWA_NO_ALT_ENTER) >> statusCode;
 			m_SwapChain1.As(&m_SwapChain4) >> statusCode;
 
 			Status = FPL_SUCCESS
 			return Status;
 		}
-		SwapChain::SwapChain(Window& window, Device& device, uint32_t bufferCount) 
+		SwapChain::SwapChain(Window& window, std::shared_ptr<Device>& device, uint32_t bufferCount) 
 			: m_Window((WinWindow&)window), m_Device(device), m_BufferCount(bufferCount)
 		{
 			m_BackBuffers.resize(bufferCount);
