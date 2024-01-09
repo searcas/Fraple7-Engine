@@ -1,7 +1,7 @@
 #pragma once
-#include "directx/d3dx12.h"
 #include "Utilities/Common/Common.h"
 #include "dxgi1_6.h"
+#include "directx/d3dx12.h"
 
 namespace Fraple7
 {
