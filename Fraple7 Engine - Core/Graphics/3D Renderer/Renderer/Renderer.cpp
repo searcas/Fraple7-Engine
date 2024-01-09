@@ -139,7 +139,7 @@ namespace Fraple7
 			}
 			{
 				// present frame
-				m_PipeLine.GetSwapChain()->Sync(0,0);
+				m_PipeLine.GetSwapChain()->vSync();
 				
 				// insert fence to mark command list completion
 				m_Fence->CompleteMultiFrame();

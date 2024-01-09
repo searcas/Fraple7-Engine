@@ -14,15 +14,16 @@ namespace Fraple7
 			const ComPtr<IDXGISwapChain4>& GetSwapChain() const { return m_SwapChain4; }
 		public:
 			~SwapChain();
-			void Sync(uint8_t interval, uint32_t flags);
+			void vSync();
 			uint32_t Create(std::shared_ptr<Commands::QueueDx>& cQueue);
 			uint32_t RenderTargetView();
-
+			bool AllowTearing();
 			uint32_t GetBufferCount() const { return m_BufferCount; }
 			void SetBufferCount(uint32_t val) { m_BufferCount = val; }
 			std::vector<ComPtr<ID3D12Resource>>& GetBackBuffer() { return m_BackBuffers; }
 			const ComPtr<ID3D12DescriptorHeap>& GetRTDescHeap() const { return m_RtDescriptorHeap; }
-			const UINT GetRenderTargetSize() { return m_RenderTargetSize; }
+			const UINT GetRenderTargetSize() const { return m_RenderTargetSize; }
+			void SetVSync(bool sync) { m_vSync = sync; }
 		private:
 			std::shared_ptr<class Device>& m_Device;
 			ComPtr<IDXGISwapChain1> m_SwapChain1;
@@ -32,6 +33,8 @@ namespace Fraple7
 			std::vector<ComPtr<ID3D12Resource>>m_BackBuffers;
 			ComPtr<ID3D12DescriptorHeap>m_RtDescriptorHeap;
 			UINT m_RenderTargetSize = 0;
+			bool m_AllowTearing = false;
+			bool m_vSync = false;
 		};
 	}
 }

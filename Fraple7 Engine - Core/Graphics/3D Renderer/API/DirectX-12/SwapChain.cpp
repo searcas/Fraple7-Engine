@@ -41,6 +41,24 @@ namespace Fraple7
 			Status = FPL_SUCCESS;
 			return Status;
 		}
+		bool SwapChain::AllowTearing()
+		{
+
+			ComPtr<IDXGIFactory4> factory4;
+			if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&factory4))))
+			{
+				ComPtr<IDXGIFactory5> factory5;
+				if (SUCCEEDED(factory4.As(&factory5)))
+				{
+					if (FAILED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &m_AllowTearing, sizeof(m_AllowTearing)))) {
+						return m_AllowTearing;
+					}
+					else return m_AllowTearing;
+				}
+			}
+			
+			return m_AllowTearing;
+		}
 		uint32_t SwapChain::Create(std::shared_ptr<Commands::QueueDx>& Queue)
 		{
 			uint32_t Status = FPL_PIPELINE_SWAP_CHAIN_ERROR;
@@ -58,7 +76,7 @@ namespace Fraple7
 				.Scaling = DXGI_SCALING_STRETCH,
 				.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
 				.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
-				.Flags = 0 //DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING
+				.Flags = (AllowTearing() ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u)
 			};
 			m_Device->GetDXGIFactory()->CreateSwapChainForHwnd(Queue->GetCmdQueue().Get(),
 				m_Window.GetHandle(),
@@ -78,8 +96,11 @@ namespace Fraple7
 		{
 			//m_SwapChain4->Release();
 		}
-		void SwapChain::Sync(uint8_t interval, uint32_t flags)
+		void SwapChain::vSync()
 		{
+			uint8_t interval, flags;
+			interval = m_vSync ? 1 : 0;
+			flags = m_AllowTearing && !m_vSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
 			m_SwapChain4->Present(interval, flags) >> statusCode;
 		}
 	}
