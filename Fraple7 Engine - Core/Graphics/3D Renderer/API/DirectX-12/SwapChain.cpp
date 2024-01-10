@@ -98,8 +98,8 @@ namespace Fraple7
 		}
 		void SwapChain::vSync()
 		{
-			uint8_t interval, flags;
-			interval = m_vSync ? 1 : 0;
+			uint16_t interval, flags;
+			interval = m_vSync;
 			flags = m_AllowTearing && !m_vSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
 			m_SwapChain4->Present(interval, flags) >> statusCode;
 		}

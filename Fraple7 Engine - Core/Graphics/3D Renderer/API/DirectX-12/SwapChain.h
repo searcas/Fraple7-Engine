@@ -33,7 +33,7 @@ namespace Fraple7
 			std::vector<ComPtr<ID3D12Resource>>m_BackBuffers;
 			ComPtr<ID3D12DescriptorHeap>m_RtDescriptorHeap;
 			UINT m_RenderTargetSize = 0;
-			bool m_AllowTearing = false;
+			BOOL m_AllowTearing = false;
 			bool m_vSync = false;
 		};
 	}
