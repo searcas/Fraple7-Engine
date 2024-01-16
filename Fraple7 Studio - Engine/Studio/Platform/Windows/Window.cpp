@@ -41,10 +41,10 @@ namespace Fraple7
 					::GetClientRect(hwnd, &currentSize);
 					int width = currentSize.right - currentSize.left;
 					int height = currentSize.bottom - currentSize.top;
-					if (m_Width != width || m_Height != m_Height)
+					if (m_Width != width || m_Height != height)
 					{
 						m_Width = width;
-						m_Height = m_Height;
+						m_Height = height;
 						Resize();
 					}
 					break;
