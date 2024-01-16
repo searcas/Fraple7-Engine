@@ -102,7 +102,6 @@
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Command.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\DepthBuffer.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Device.h" />
-    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Fence.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\IndexBuffer.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.h" />
@@ -128,7 +127,6 @@
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Command.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\DepthBuffer.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Device.cpp" />
-    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Fence.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\IndexBuffer.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.cpp" />

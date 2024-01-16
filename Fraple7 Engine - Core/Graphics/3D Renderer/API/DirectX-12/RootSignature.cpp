@@ -6,7 +6,7 @@ namespace Fraple7
 {
 	namespace Core
 	{
-		RootSignature::RootSignature()
+		RootSignature::RootSignature(const ComPtr<ID3D12Device2>& device) : m_Device(device)
 		{
 			Init();
 		}
@@ -22,17 +22,18 @@ namespace Fraple7
 				| D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
 
 			m_RootParameters[0].InitAsConstants(sizeof(DirectX::XMMATRIX) / 4, 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
-			m_DescRange = CD3DX12_DESCRIPTOR_RANGE{ D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0 };
+			m_DescRange = CD3DX12_DESCRIPTOR_RANGE1{ D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0u };
 			m_RootParameters[1].InitAsDescriptorTable(1, &m_DescRange);
 			m_StaticSampler = CD3DX12_STATIC_SAMPLER_DESC{ 0, D3D12_FILTER_MIN_MAG_MIP_LINEAR };
-			m_SigDesc.Init((UINT)std::size(m_RootParameters), m_RootParameters, 1, &m_StaticSampler, flags);
+			m_SigDesc.Init_1_1((UINT)std::size(m_RootParameters), m_RootParameters, 1, &m_StaticSampler, flags);
 		}
-		void RootSignature::Create(const ComPtr<ID3D12Device2>& device)
+		void RootSignature::Create()
 		{
 			ComPtr<ID3D10Blob> signatureBlob;
 			ComPtr<ID3D10Blob> errorBlob;
-
-			if (const auto hr = D3D12SerializeRootSignature(&m_SigDesc, D3D_ROOT_SIGNATURE_VERSION_1,&signatureBlob, &errorBlob); FAILED(hr))
+			Validation();
+			
+			if (const auto hr = D3DX12SerializeVersionedRootSignature(&m_SigDesc, m_HighestVersion, &signatureBlob, &errorBlob); FAILED(hr))
 			{
 				if (errorBlob)
 				{
@@ -41,9 +42,19 @@ namespace Fraple7
 				}
 				hr >> statusCode;
 			}
-			device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature)) >> statusCode;
+			m_Device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature)) >> statusCode;
 			FPL_LOG("Root Signature has been created", "Noo Error", Logs::INFO);
 
+		}
+		void RootSignature::Validation()
+		{
+			D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+			featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+			if (FAILED(m_Device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
+			{
+				featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+			}
+			m_HighestVersion = featureData.HighestVersion;
 		}
 	}
 }

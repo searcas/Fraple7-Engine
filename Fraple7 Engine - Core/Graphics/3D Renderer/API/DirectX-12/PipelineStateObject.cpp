@@ -8,14 +8,14 @@ namespace Fraple7
 {
 	namespace Core
 	{
-		PSO::PSO()
+		PSO::PSO(const ComPtr<ID3D12Device2>& Device) : m_Device(Device), m_RootSign(Device)
 		{
 			
 		}
-		void PSO::Create(const ComPtr<ID3D12Device2>& device)
+		void PSO::Create()
 		{
 			
-			m_RootSign.Create(device);
+			m_RootSign.Create();
 
 			Inputlayout inputLayout;
 			ShadersLoader shaders;
@@ -28,10 +28,10 @@ namespace Fraple7
 			pipelineStateStream.vertexShader = CD3DX12_SHADER_BYTECODE(shaders.GetBlob(ShadersLoader::ShaderType::Vertex).Get());
 			pipelineStateStream.pixelshader = CD3DX12_SHADER_BYTECODE(shaders.GetBlob(ShadersLoader::ShaderType::Pixel).Get());
 			pipelineStateStream.DSVFormats = DXGI_FORMAT_D32_FLOAT;
-			pipelineStateStream.RTVFormats = { .RTFormats { DXGI_FORMAT_R8G8B8A8_UNORM}, .NumRenderTargets = 1 };
+			pipelineStateStream.RTVFormats = { .RTFormats{ DXGI_FORMAT_R8G8B8A8_UNORM}, .NumRenderTargets = 1 };
 			const D3D12_PIPELINE_STATE_STREAM_DESC  pipelineStateStreamDesc = { sizeof(PipelineStateStream), &pipelineStateStream };
 			 
-			device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_PipeLineState)) >> statusCode;
+			m_Device->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_PipeLineState)) >> statusCode;
 		}
 	}
 }

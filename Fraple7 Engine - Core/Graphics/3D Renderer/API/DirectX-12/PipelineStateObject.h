@@ -22,14 +22,15 @@ namespace Fraple7
 
 			}pipelineStateStream;
 		public:
-			PSO();
-			void Create(const ComPtr<ID3D12Device2>& GetDevice);
+			PSO(const ComPtr<ID3D12Device2>& m_Device);
+			void Create();
 			~PSO() = default;
 			const ComPtr<ID3D12PipelineState>& GetPLS() { return m_PipeLineState; }
 			RootSignature& GetRootSig() { return m_RootSign; }
 		private:
 			RootSignature m_RootSign;
 			ComPtr<ID3D12PipelineState> m_PipeLineState;
+			const ComPtr<ID3D12Device2>& m_Device;
 		};
 
 

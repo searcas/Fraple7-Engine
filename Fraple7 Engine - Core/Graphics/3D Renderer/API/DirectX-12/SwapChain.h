@@ -15,7 +15,7 @@ namespace Fraple7
 		public:
 			~SwapChain();
 			void vSync();
-			uint32_t Create(std::shared_ptr<Commands::QueueDx>& cQueue);
+			uint32_t Create(std::shared_ptr<Command::QueueDx>& cQueue);
 			uint32_t RenderTargetView();
 			bool AllowTearing();
 			uint32_t GetBufferCount() const { return m_BufferCount; }

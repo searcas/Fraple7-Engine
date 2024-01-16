@@ -1,12 +1,35 @@
 #include "pch.h"
 #include "Window.h"
 #include "Utilities/Common/Common.h"
+
 #ifdef WINDOWS
 
 namespace Fraple7
 {
 	namespace Core
 	{
+		void WinWindow::Resize()
+		{
+		
+			m_Width = (std::max(1u, m_Width));
+			m_Width = (std::max(1u, m_Height));
+			if (m_Device.get() == nullptr)
+				return;
+
+			m_CommandQueue->SignalAndWait();
+			const auto& SwapChainPtr = m_SwapChain->GetSwapChain();
+			for (size_t i = 0; i < m_SwapChain->GetBufferCount(); i++)
+			{
+				m_SwapChain->GetBackBuffer()[i].Reset();
+			}
+			DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+			SwapChainPtr->GetDesc(&swapChainDesc) >> statusCode;
+			SwapChainPtr->ResizeBuffers(m_SwapChain->GetBufferCount(), m_Width, m_Height,
+										swapChainDesc.BufferDesc.Format, swapChainDesc.Flags) >> statusCode;
+
+			
+			m_SwapChain->RenderTargetView();
+		}
 		LRESULT CALLBACK WinWindow::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam) noexcept
 		{
 			bool alt = (::GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
@@ -17,8 +40,13 @@ namespace Fraple7
 					RECT currentSize = {};
 					::GetClientRect(hwnd, &currentSize);
 					int width = currentSize.right - currentSize.left;
-					int height = currentSize.top - currentSize.bottom;
-					Resize(width, height);
+					int height = currentSize.bottom - currentSize.top;
+					if (m_Width != width || m_Height != m_Height)
+					{
+						m_Width = width;
+						m_Height = m_Height;
+						Resize();
+					}
 					break;
 				}
 				case WM_CLOSE:
@@ -47,23 +75,26 @@ namespace Fraple7
 					switch (wParam)
 					{
 					case 'G':
-						// TODO
-						// Enable vSYNC here
+						m_vSync = !m_vSync;
+						m_SwapChain->SetVSync(m_vSync);
+						OutputDebugString("vSync Enabled");
 						break;
-					case VK_RETURN:
 						if (alt)
 						{
+					case VK_RETURN:
 					case VK_F11:
-						SetFullScreen(true);
+						SetFullScreen();
+						break;
 					case VK_F4:
 						PostQuitMessage(0);
+						break;
 						}
 						break;
 					}
 					break;
 				}
-				case WM_SYSCHAR:
-					break;
+			/*	case WM_SYSCHAR:
+					break;*/
 				case WM_KEYUP:
 				case WM_SYSKEYUP:
 				{
@@ -153,7 +184,6 @@ namespace Fraple7
 			// Register the window class.
 			const char CLASS_NAME[] = "Fraple7 Studio";
 
-
 			m_WC.lpfnWndProc = &HandleMsgSetup;
 			m_WC.hInstance = NULL;
 			m_WC.lpszClassName = CLASS_NAME;
@@ -194,60 +224,48 @@ namespace Fraple7
 		{
 		}
 
-		void WinWindow::SetFullScreen(bool setFullScreen)
+		void WinWindow::SetFullScreen()
 		{
-			if (setFullScreen != m_FullScreen)
+			m_FullScreen = !m_FullScreen;
+			if (m_FullScreen)
 			{
-				m_FullScreen = setFullScreen;
-				if (m_FullScreen)
-				{
-					m_FullScreen = true;
-					FPL_CHECK_STATUS_OK(GetWindowRect(m_hWnd, &m_wRect));
-					UINT windowStyle = WS_OVERLAPPEDWINDOW & ~(WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
-					FPL_CHECK_STATUS_OK(::SetWindowLongW(m_hWnd, GWL_STYLE, windowStyle));
-					// Query the name of the nearest display device for the window.
-					// This is required to set the fullscreen dimensions of the window
-					// when using a multi-monitor setup.
-					HMONITOR hMonitor = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-					MONITORINFOEX monitorInfo = {};
-					monitorInfo.cbSize = sizeof(MONITORINFOEX);
-					FPL_CHECK_STATUS_OK(GetMonitorInfo(hMonitor, &monitorInfo));
+				m_FullScreen = true;
+				FPL_CHECK_STATUS_OK(GetWindowRect(m_hWnd, &m_wRect));
+				UINT windowStyle = WS_OVERLAPPEDWINDOW & ~(WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+				FPL_CHECK_STATUS_OK(::SetWindowLongW(m_hWnd, GWL_STYLE, windowStyle));
+				// Query the name of the nearest display device for the window.
+				// This is required to set the fullscreen dimensions of the window
+				// when using a multi-monitor setup.
+				HMONITOR hMonitor = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+				MONITORINFOEX monitorInfo = {};
+				monitorInfo.cbSize = sizeof(MONITORINFOEX);
+				FPL_CHECK_STATUS_OK(GetMonitorInfo(hMonitor, &monitorInfo));
 
-					FPL_CHECK_STATUS_OK(::SetWindowPos(m_hWnd, HWND_TOP,
-						monitorInfo.rcMonitor.left,
-						monitorInfo.rcMonitor.top,
-						monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
-						monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
-						SWP_FRAMECHANGED | SWP_NOACTIVATE));
+				FPL_CHECK_STATUS_OK(::SetWindowPos(m_hWnd, HWND_TOP,
+					monitorInfo.rcMonitor.left,
+					monitorInfo.rcMonitor.top,
+					monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
+					monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+					SWP_FRAMECHANGED | SWP_NOACTIVATE));
 
-					FPL_CHECK_STATUS_OK(::ShowWindow(m_hWnd, SW_MAXIMIZE));
-				}
-				else
-				{
-					// Restore all the window decorators.
-					::SetWindowLong(m_hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-
-					::SetWindowPos(m_hWnd, HWND_NOTOPMOST,
-						m_wRect.left,
-						m_wRect.top,
-						m_wRect.right - m_wRect.left,
-						m_wRect.bottom - m_wRect.top,
-						SWP_FRAMECHANGED | SWP_NOACTIVATE);
-
-					::ShowWindow(m_hWnd, SW_NORMAL);
-				}
+				FPL_CHECK_STATUS_OK(::ShowWindow(m_hWnd, SW_MAXIMIZE));
 			}
-			
+			else
+			{
+				// Restore all the window decorators.
+				::SetWindowLong(m_hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+
+				::SetWindowPos(m_hWnd, HWND_NOTOPMOST,
+					m_wRect.left,
+					m_wRect.top,
+					m_wRect.right - m_wRect.left,
+					m_wRect.bottom - m_wRect.top,
+					SWP_FRAMECHANGED | SWP_NOACTIVATE);
+
+				::ShowWindow(m_hWnd, SW_NORMAL);
+			}
 		}
 
-		bool WinWindow::Resize(uint32_t width, uint32_t height)
-		{
-			if (width != m_Width || height != m_Height)
-			{
-				return true;
-			}
-			return false;
-		}
 
 		uint32_t WinWindow::Run() const
 		{

@@ -9,18 +9,22 @@ namespace Fraple7
 		class RootSignature
 		{
 		public:
-			RootSignature();
+			RootSignature(const ComPtr<ID3D12Device2>& device);
 			~RootSignature();
 			
 			const ComPtr<ID3D12RootSignature>& GetSignature() { return m_RootSignature; }
 			void Init();
-			void Create(const ComPtr<ID3D12Device2>&);
+			void Create();
+			void Validation();
 		private:
 			ComPtr<ID3D12RootSignature> m_RootSignature;
-			CD3DX12_ROOT_SIGNATURE_DESC m_SigDesc;
-			CD3DX12_ROOT_PARAMETER m_RootParameters[ROOT_PARAMETERS]{};
+			CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC m_SigDesc;
+			CD3DX12_ROOT_PARAMETER1 m_RootParameters[ROOT_PARAMETERS]{};
 			CD3DX12_STATIC_SAMPLER_DESC m_StaticSampler;
-			CD3DX12_DESCRIPTOR_RANGE m_DescRange;
+			CD3DX12_DESCRIPTOR_RANGE1 m_DescRange;
+			const ComPtr<ID3D12Device2>& m_Device;
+			D3D_ROOT_SIGNATURE_VERSION m_HighestVersion;
+
 		};
 
 	}

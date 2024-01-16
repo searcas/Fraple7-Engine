@@ -59,7 +59,7 @@ namespace Fraple7
 			
 			return m_AllowTearing;
 		}
-		uint32_t SwapChain::Create(std::shared_ptr<Commands::QueueDx>& Queue)
+		uint32_t SwapChain::Create(std::shared_ptr<Command::QueueDx>& Queue)
 		{
 			uint32_t Status = FPL_PIPELINE_SWAP_CHAIN_ERROR;
 			const DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {

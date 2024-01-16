@@ -19,46 +19,48 @@ namespace Fraple7
 		Renderer::Renderer(Window& window)
 			: m_Window((WinWindow&)window), 
 			m_PipeLine(window),
-			m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice()->GetDevice())
+			m_Projection(window), m_Texture(L"ShibaShitu.png", m_PipeLine.GetDevice()->GetDevice()),
+			m_PSO(m_PipeLine.GetDevice()->GetDevice())
 		{
-			m_Fence = std::make_shared<FenceDx>(m_PipeLine.GetCommandQueue(), m_PipeLine.GetSwapChain()->GetBufferCount());
-			m_Window.SetFenceRef(m_Fence);
-			m_Fence->Create(m_PipeLine.GetDevice()->GetDevice());
-			m_Fence->CreateAnEvent();
+			m_FenceValues.resize(m_PipeLine.GetSwapChain()->GetBufferCount());
 			m_VertexBuffer.Create(m_PipeLine.GetDevice()->GetDevice());
 
-			auto& ComList  = m_PipeLine.GetCommandList().GetCommandList();
-			auto& ComAlloc = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
-			auto& ComQueue = m_PipeLine.GetCommandQueue()->GetCmdQueue();
-			CommandMgr que(ComList, ComAlloc, ComQueue);
-			que.Join(m_VertexBuffer.GetVertexBuffer(), m_VertexBuffer.GetVertexUploadBuffer(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+			const auto& ComQueue = m_PipeLine.GetCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
+
+			ComQueue->Join(m_VertexBuffer.GetVertexBuffer(), m_VertexBuffer.GetVertexUploadBuffer());
 
 			// insert fence to detect when upload is complete
-			m_Fence->Complete();
+			ComQueue->SignalAndWait();
 
 			m_VertexBuffer.CreateVertexBufferView();
 			m_IndexBuffer.Create(m_PipeLine.GetDevice()->GetDevice());
 
-			que.Join(m_IndexBuffer.GetIndexBuffer(), m_IndexBuffer.GetIndexUploadBuffer(), D3D12_RESOURCE_STATE_INDEX_BUFFER);
+			ComQueue->Join(m_IndexBuffer.GetIndexBuffer(), m_IndexBuffer.GetIndexUploadBuffer(), m_Texture.GetSubData().size(), m_Texture.GetSubData());
 
-			m_Fence->Complete();
-
+ 			ComQueue->SignalAndWait();
 
 			m_IndexBuffer.CreateIndexBufferView();
 
 			m_Texture.Create();
 
-			que.Join(m_Texture.GetTextureBuffer(), m_Texture.GetTextureUploadBuffer(), m_Texture.GetSubData().size(), m_Texture.GetSubData(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			m_Fence->Complete();
+			ComQueue->Join(m_Texture.GetTextureBuffer(), m_Texture.GetTextureUploadBuffer(), m_Texture.GetSubData().size(), m_Texture.GetSubData());
+
+			ComQueue->SignalAndWait();
 
 			m_Texture.DescriptorHeap();
 			// Create descriptor in the heap
 			m_Texture.ShaderResourceViewDesc();
 
-			m_PSO.Create(m_PipeLine.GetDevice()->GetDevice());
+			m_PSO.Create();
+
+			// Ensures that scrissor rectangle covers the entire screen 
+			// regardless of the size of the screen
 			m_ScissorRect = CD3DX12_RECT{ 0,0, LONG_MAX, LONG_MAX };
+			// specifices the viewable part of the screen to render to
 			m_Viewport = CD3DX12_VIEWPORT{ 0.0f, 0.0f, float(window.GetWidth()), float(window.GetHeight()) };
 			m_Projection.SetView();
+
+			ComQueue->WaitForFenceCompletion(ComQueue->ExecuteCommandList(ComQueue->GetCommandList()));
 		}
 	
 		float t = 0.0f;
@@ -70,18 +72,14 @@ namespace Fraple7
 
 			auto& BackBuffer = m_PipeLine.GetSwapChain()->GetBackBuffer()[m_CurrentBackBufferIndex];
 
-			auto& ComAll = m_PipeLine.GetCommandAllocator().GetCommandAlloc();
-			ComAll->Reset() >> statusCode;
-			auto& ComList = m_PipeLine.GetCommandList().GetCommandList();
-			ComList->Reset(ComAll.Get(), nullptr) >> statusCode;
+			auto& CommandQueue = m_PipeLine.GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
+			const auto& CommandList = CommandQueue->GetCommandList();
 
 			const CD3DX12_CPU_DESCRIPTOR_HANDLE rtv{ m_PipeLine.GetSwapChain()->GetRTDescHeap()->GetCPUDescriptorHandleForHeapStart(),
 														(INT)m_CurrentBackBufferIndex, m_PipeLine.GetSwapChain()->GetRenderTargetSize() };
 			{
 				// transition buffer resource to render target state
-				const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(BackBuffer.Get(), 
-					D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-				ComList->ResourceBarrier(1, &barrier);
+				CommandQueue->Transition(BackBuffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 				FLOAT clearColor[] = { 
 					
@@ -90,26 +88,26 @@ namespace Fraple7
 					sin(5.f * t + 2.f) / 2.f + .5f,
 					1.0f };
 
-				ComList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
+				CommandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 			}
-			ComList->ClearDepthStencilView(m_PipeLine.GetDSVHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr );
+			CommandList->ClearDepthStencilView(m_PipeLine.GetDSVHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr );
 			// Set Pipeline state
-			ComList->SetPipelineState(m_PSO.GetPLS().Get());
-			ComList->SetGraphicsRootSignature(m_PSO.GetRootSig().GetSignature().Get());
+			CommandList->SetPipelineState(m_PSO.GetPLS().Get());
+			CommandList->SetGraphicsRootSignature(m_PSO.GetRootSig().GetSignature().Get());
 
 			// Configure IA
-			ComList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			ComList->IASetVertexBuffers(0, 1, &m_VertexBuffer.GetVertexBufferView());
-			ComList->IASetIndexBuffer(&m_IndexBuffer.GetIndexBufferView());
+			CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			CommandList->IASetVertexBuffers(0, 1, &m_VertexBuffer.GetVertexBufferView());
+			CommandList->IASetIndexBuffer(&m_IndexBuffer.GetIndexBufferView());
 
-			ComList->RSSetViewports(1, &m_Viewport);
-			ComList->RSSetScissorRects(1, &m_ScissorRect);
+			CommandList->RSSetViewports(1, &m_Viewport);
+			CommandList->RSSetScissorRects(1, &m_ScissorRect);
 
 			//bind the heap containing the texture descriptor
-			ComList->SetDescriptorHeaps(1, m_Texture.GetSrvHeap().GetAddressOf());
-			ComList->SetGraphicsRootDescriptorTable(1, m_Texture.GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
+			CommandList->SetDescriptorHeaps(1, m_Texture.GetSrvHeap().GetAddressOf());
+			CommandList->SetGraphicsRootDescriptorTable(1, m_Texture.GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
 			// bind render target & depth stencil
-			ComList->OMSetRenderTargets(1, &rtv, TRUE, &m_PipeLine.GetDSVHandle());
+			CommandList->OMSetRenderTargets(1, &rtv, TRUE, &m_PipeLine.GetDSVHandle());
 
 			{
 				const auto mvp = DirectX::XMMatrixTranspose(
@@ -118,31 +116,21 @@ namespace Fraple7
 					DirectX::XMMatrixRotationZ(1.1f * t + 0.f) *
 					m_Projection.GetProjectionView());
 
-				ComList->SetGraphicsRoot32BitConstants(0, sizeof(mvp) / 4, &mvp, 0);
-				ComList->DrawIndexedInstanced(m_IndexBuffer.GetIndices(), 1, 0, 0, 0);
+				CommandList->SetGraphicsRoot32BitConstants(0, sizeof(mvp) / 4, &mvp, 0);
+				CommandList->DrawIndexedInstanced(m_IndexBuffer.GetIndices(), 1, 0, 0, 0);
 			}
 			// Prepare buffer for presentation
 			{
-				const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(BackBuffer.Get(),
-					D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-				ComList->ResourceBarrier(1, &barrier);
+				CommandQueue->Transition(BackBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 			}
 			// submit command list
-			auto& cQueue = m_PipeLine.GetCommandQueue()->GetCmdQueue();
 			
 			{
-				ComList->Close() >> statusCode;
-				ID3D12CommandList* const CommandList[] = { ComList.Get() };
-				cQueue->ExecuteCommandLists(
-					_countof(CommandList), CommandList);
-				
-			}
-			{
+				m_FenceValues[m_CurrentBackBufferIndex] = CommandQueue->ExecuteCommandList(CommandList);
 				// present frame
 				m_PipeLine.GetSwapChain()->vSync();
-				
 				// insert fence to mark command list completion
-				m_Fence->CompleteMultiFrame();
+				CommandQueue->WaitForFenceCompletion(m_FenceValues[m_CurrentBackBufferIndex]);
 			}
 			t += step;
 		}

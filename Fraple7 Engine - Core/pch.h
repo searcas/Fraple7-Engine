@@ -15,6 +15,10 @@
 #include <mutex>
 #include <memory>
 
+// Arrays
+#include <queue>
+#include <stack>
+#include <vector>
 // add headers that you want to pre-compile here
 #include "framework.h"
 

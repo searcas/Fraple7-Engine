@@ -13,8 +13,9 @@ namespace Fraple7
 			virtual void Initialize() = 0;
 			virtual ~Window() = default;
 			Window() = default;
-			virtual void SetFullScreen(bool) = 0;
-			virtual bool Resize(uint32_t width, uint32_t height ) = 0;
+			virtual void SetFullScreen() = 0;
+			virtual void SetResize(bool) = 0;
+			virtual bool GetResize()const = 0;
 			virtual uint32_t Run() const = 0;
 			virtual HWND GetHandle() const = 0;
 

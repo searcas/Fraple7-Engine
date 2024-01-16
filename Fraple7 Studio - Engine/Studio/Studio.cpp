@@ -13,6 +13,8 @@ int wWinMain(
     _In_ int nShowCmd
 )
 {
+	SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
 	Fraple7::Core::WinWindow window(1920, 1080, std::string("Fraple7 Test"));
 	Fraple7::Core::Engine engine(window);
 	

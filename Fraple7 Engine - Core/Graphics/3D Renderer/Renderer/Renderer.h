@@ -1,6 +1,5 @@
 #pragma once
 #include "Graphics/3D Renderer/API/DirectX-12/PipeLineDx.h"
-#include "Graphics/3D Renderer/API/DirectX-12/Fence.h"
 #include "Graphics/3D Renderer/API/DirectX-12/VertexBuffer.h"
 #include "Graphics/3D Renderer/API/DirectX-12/PipelineStateObject.h"
 #include "Graphics/3D Renderer/API/DirectX-12/IndexBuffer.h"
@@ -27,12 +26,12 @@ namespace Fraple7
 			uint32_t m_CurrentBackBufferIndex = 0;
 			CD3DX12_RECT m_ScissorRect;
 			CD3DX12_VIEWPORT m_Viewport;
-			std::shared_ptr<FenceDx> m_Fence;
 			PSO m_PSO;
 			Projection m_Projection;
 			IndexBuffer m_IndexBuffer;
 			Texture m_Texture;
 			WinWindow& m_Window;
+			std::vector<uint64_t> m_FenceValues;
 		};
 
 	}

@@ -6,98 +6,145 @@ namespace Fraple7
 {
 	namespace Core
 	{
-
-		Commands::QueueDx::QueueDx(const D3D12_COMMAND_QUEUE_DESC& desc)
-			: m_Desc(desc)
+		Command::QueueDx::~QueueDx()
 		{
+			m_CommandQueue->Signal(m_Fence.Get(), ++m_FenceVal) >> statusCode;
+			m_Fence->SetEventOnCompletion(m_FenceVal, m_FenceEvent) >> statusCode;
 
+			if (WaitForSingleObject(m_FenceEvent, 2000) == WAIT_FAILED)
+			{
+				GetLastError() >> statusCode;
+			}
 		}
-
-		void Commands::QueueDx::SetCommandQueueDescriptor(const D3D12_COMMAND_QUEUE_DESC& desc)
-		{
-			m_Desc = desc;
-		}
-
-		uint32_t Commands::QueueDx::Create(const ComPtr<ID3D12Device2>& device)
-		{
-			device->CreateCommandQueue(&m_Desc, IID_PPV_ARGS(&m_CommandQueue)) >> statusCode;
-			return FPL_SUCCESS;
-		}
-		D3D12_COMMAND_QUEUE_DESC Commands::QueueDx::SetCustomDescription(D3D12_COMMAND_LIST_TYPE type, 
-			INT priority, D3D12_COMMAND_QUEUE_FLAGS flags, UINT NodeMask) const
+		Command::QueueDx::QueueDx(const ComPtr<ID3D12Device2>& device, D3D12_COMMAND_LIST_TYPE type) : m_Device(device) , m_Type(type)
 		{
 			const D3D12_COMMAND_QUEUE_DESC desc = {
 				.Type = type,
-				.Priority = priority,
-				.Flags = flags,
-				.NodeMask = NodeMask,
-			};
-			return desc;
-		}
-		D3D12_COMMAND_QUEUE_DESC Commands::QueueDx::SetDescriptionDirectNormal() const
-		{
-			const D3D12_COMMAND_QUEUE_DESC desc = {
-				.Type = D3D12_COMMAND_LIST_TYPE_DIRECT,
 				.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL,
 				.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE,
-				.NodeMask = 0,
+				.NodeMask = 0
 			};
-			return desc;
+			m_Desc = desc;
+			CreateCommandQueue();
+			CreateFence();
+			CreateAnEvent();
 		}
-
-		Commands::Allocator::Allocator()
+		ComPtr<ID3D12GraphicsCommandList2> Command::QueueDx::GetCommandList()
 		{
+			if (!m_CommandAllocatorQueue.empty() && IsFenceReached(m_CommandAllocatorQueue.front().fenceValue))
+			{
+				m_CommandAllocator = m_CommandAllocatorQueue.front().commandAllocator;
+				m_CommandAllocatorQueue.pop();
+				m_CommandAllocator->Reset() >> statusCode;
+			}
+			else
+			{
+				 CreateCommandAllocatator();
+			}
+			if (!m_CommandListQueue.empty())
+			{
+				m_CommandList = m_CommandListQueue.front();
+				m_CommandListQueue.pop();
+				m_CommandList->Reset(m_CommandAllocator.Get(), nullptr) >> statusCode;
+			}
+			else
+			{
+				CreateCommandList();
+			}
+			// Bind command allocator with command list 
+			// so we can get when command list is executed
+			m_CommandList->SetPrivateDataInterface(__uuidof(ID3D12CommandAllocator), m_CommandAllocator.Get()) >> statusCode;
+			return m_CommandList;
+		}
+		void Command::QueueDx::CreateAnEvent()
+		{
+			m_FenceEvent = CreateEventW(nullptr, FALSE, FALSE, FALSE);
+			if (!m_FenceEvent)
+			{
+				GetLastError() >> statusCode;
+				throw std::runtime_error{ "Failed to create fence event" };
+			}
+		}
+		void Command::QueueDx::CreateFence()
+		{
+			m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)) >> statusCode;
+		}
+		void Command::QueueDx::WaitForFenceCompletion(uint64_t fenceValue)
+		{
+			if (!IsFenceReached(fenceValue))
+			{
+				m_Fence->SetEventOnCompletion(m_FenceVal, m_FenceEvent) >> statusCode;
+				if (::WaitForSingleObject(m_FenceEvent, DWORD_MAX) == WAIT_FAILED)
+				{
+					GetLastError() >> statusCode;
+				}
+			}
+		}
+		uint64_t Command::QueueDx::Signal() const
+		{
+			m_CommandQueue->Signal(m_Fence.Get(), ++m_FenceVal) >> statusCode;
+			return m_FenceVal;
+		}
+		uint64_t Command::QueueDx::SignalAndWait()
+		{
+			uint64_t signal = Signal();
+			WaitForFenceCompletion(signal);
+			return signal;
+		}
+		uint64_t Command::QueueDx::ExecuteCommandList(const ComPtr<ID3D12GraphicsCommandList2>& commandList)
+		{
+			commandList->Close();
+			ID3D12CommandAllocator* commandAllocator;
+			UINT dataSize = sizeof(commandAllocator);
+
+			commandList->GetPrivateData(__uuidof(ID3D12CommandAllocator), &dataSize, &commandAllocator) >> statusCode; 
+
+			ID3D12CommandList* const pComandLists[] = { commandList.Get() };
+			m_CommandQueue->ExecuteCommandLists(1, pComandLists);
+
+			uint64_t fenceValue = Signal();
+
+			m_CommandAllocatorQueue.emplace(CommandAllocatorBundle{ fenceValue, commandAllocator });
+			m_CommandListQueue.push(commandList);
 			
+			// We can safe release command allocator
+			// Since we transfered in the command allocator queue.
+			m_CommandAllocator->Release();
+			return fenceValue;
 		}
-
-		void Commands::Allocator::Allocate(const ComPtr<ID3D12Device2>& device)
+		uint32_t Command::QueueDx::CreateCommandQueue()
 		{
-			device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocator));
+			m_Device->CreateCommandQueue(&m_Desc, IID_PPV_ARGS(&m_CommandQueue)) >> statusCode;
+			return FPL_SUCCESS;
 		}
 
-		void Commands::List::Close()
+		bool Command::QueueDx::IsFenceReached(uint64_t fenceVal)
 		{
-			m_CommandList->Close() >> statusCode;
+			return m_Fence->GetCompletedValue() >= fenceVal;
 		}
 
-		void Commands::List::Create(const ComPtr<ID3D12Device2>& device, const ComPtr<ID3D12CommandAllocator>& cAlloc)
+		void Command::QueueDx::CreateCommandAllocatator()
 		{
-			device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, 
-			cAlloc.Get(), nullptr, IID_PPV_ARGS(&m_CommandList)) >> statusCode;
+			m_Device->CreateCommandAllocator(m_Type, IID_PPV_ARGS(&m_CommandAllocator)) >> statusCode;
 		}
-		void CommandMgr::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, D3D12_RESOURCE_STATES TransitionState)
+		void Command::QueueDx::CreateCommandList()
 		{
-			m_ComAll->Reset() >> statusCode;
-			m_ComList->Reset(m_ComAll.Get(), nullptr) >> statusCode;
-			m_ComList->CopyResource(dst.Get(), src.Get());
-			m_ComList->Close() >> statusCode;
-
-			// Submit command list to queue as array with single element
-			ID3D12CommandList* const commandLists[] = { m_ComList.Get() };
-			m_ComQ->ExecuteCommandLists((UINT)std::size(commandLists), commandLists);
-
+			m_Device->CreateCommandList(0, m_Type,
+				m_CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_CommandList)) >> statusCode;
 		}
-		void CommandMgr::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData, D3D12_RESOURCE_STATES TransitionState)
+		void Command::QueueDx::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src)
 		{
-			m_ComAll->Reset() >> statusCode;
-			m_ComList->Reset(m_ComAll.Get(), nullptr) >> statusCode;
-			UpdateSubresources(m_ComList.Get(), dst.Get(), src.Get(), 0, 0, (UINT)size, srcData.data());
-			Transition(dst, TransitionState);
-			m_ComList->Close() >> statusCode;
-
-			// Submit command list to queue as array with single element
-			ID3D12CommandList* const commandLists[] = { m_ComList.Get() };
-			m_ComQ->ExecuteCommandLists((UINT)std::size(commandLists), commandLists);
+			ID3D12GraphicsCommandList2* comList = GetCommandList().Get();
+			comList->CopyResource(dst.Get(), src.Get());
 		}
-		void CommandMgr::Transition(const ComPtr<ID3D12Resource>& buffer, D3D12_RESOURCE_STATES state)
+		void Command::QueueDx::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData)
+		{	
+			UpdateSubresources(m_CommandList.Get(), dst.Get(), src.Get(), 0, 0, (UINT)size, srcData.data());
+		}
+		void Command::QueueDx::Transition(const ComPtr<ID3D12Resource>& buffer, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to)
 		{
-			const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, state);
-			m_ComList->ResourceBarrier(1, &barrier);
-		}
-		CommandMgr::CommandMgr(const ComPtr<ID3D12GraphicsCommandList>& comList, const ComPtr<ID3D12CommandAllocator>& comAll, const ComPtr<ID3D12CommandQueue>& comQ)
-			: m_ComList(comList), m_ComAll(comAll), m_ComQ(comQ)
-		{ 
-
+			const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), from, to);
+			m_CommandList->ResourceBarrier(1, &barrier);
 		}
 		
 	}
