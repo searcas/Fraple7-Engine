@@ -30,8 +30,6 @@ namespace Fraple7
 			~IndexBuffer();
 			const ComPtr<ID3D12Resource>& GetIndexBuffer() { return m_IndexBuffer; }
 			const ComPtr<ID3D12Resource>& GetIndexUploadBuffer() { return m_IndexUploadBuffer; }
-			const ComPtr<ID3D12Resource>& GetFaceColorUploadBuffer() { return m_FaceColorUploadBuffer; }
-			const ComPtr<ID3D12Resource>& GetFaceColorBuffer() { return m_FaceColorBuffer; }
 			void CreateIndexBufferView(UINT vertices = std::size(s_IndexData));
 			const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() { return m_IndexBufferView; }
 			void Create(const ComPtr<ID3D12Device2>&);
@@ -42,8 +40,6 @@ namespace Fraple7
 			ComPtr<ID3D12Resource> m_IndexUploadBuffer;
 			UINT m_Indices = std::size(s_IndexData);
 			D3D12_INDEX_BUFFER_VIEW m_IndexBufferView;
-			ComPtr<ID3D12Resource> m_FaceColorBuffer;
-			ComPtr<ID3D12Resource> m_FaceColorUploadBuffer;
 
 		};
 	}

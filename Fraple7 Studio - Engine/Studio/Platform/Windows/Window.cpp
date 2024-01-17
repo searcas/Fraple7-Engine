@@ -8,28 +8,7 @@ namespace Fraple7
 {
 	namespace Core
 	{
-		void WinWindow::Resize()
-		{
-		
-			m_Width = (std::max(1u, m_Width));
-			m_Width = (std::max(1u, m_Height));
-			if (m_Device.get() == nullptr)
-				return;
 
-			m_CommandQueue->SignalAndWait();
-			const auto& SwapChainPtr = m_SwapChain->GetSwapChain();
-			for (size_t i = 0; i < m_SwapChain->GetBufferCount(); i++)
-			{
-				m_SwapChain->GetBackBuffer()[i].Reset();
-			}
-			DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-			SwapChainPtr->GetDesc(&swapChainDesc) >> statusCode;
-			SwapChainPtr->ResizeBuffers(m_SwapChain->GetBufferCount(), m_Width, m_Height,
-										swapChainDesc.BufferDesc.Format, swapChainDesc.Flags) >> statusCode;
-
-			
-			m_SwapChain->RenderTargetView();
-		}
 		LRESULT CALLBACK WinWindow::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam) noexcept
 		{
 			bool alt = (::GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
@@ -37,6 +16,8 @@ namespace Fraple7
 			{
 				case WM_SIZE:
 				{
+					if (m_SwapChain.get() == nullptr)
+						break;
 					RECT currentSize = {};
 					::GetClientRect(hwnd, &currentSize);
 					int width = currentSize.right - currentSize.left;
@@ -45,7 +26,8 @@ namespace Fraple7
 					{
 						m_Width = width;
 						m_Height = height;
-						Resize();
+						m_SwapChain->ResizeSwapChain();
+						m_DepthBuffer->ResizeDepthBuffer();
 					}
 					break;
 				}

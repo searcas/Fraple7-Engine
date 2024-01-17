@@ -6,6 +6,7 @@ namespace Fraple7
 {
 	namespace Core
 	{
+
 		class Command
 		{
 		public:
@@ -57,6 +58,19 @@ namespace Fraple7
 
 				D3D12_COMMAND_LIST_TYPE m_Type;
 			};
+		};
+
+		class CommandMgr
+		{
+		public:
+			CommandMgr(const ComPtr<ID3D12Device2>& device);
+			~CommandMgr();
+			const std::shared_ptr<Command::QueueDx>& GetCommandQueue(D3D12_COMMAND_LIST_TYPE type) const;
+			void UnloadAll();
+		private:
+			std::shared_ptr<Command::QueueDx> m_CommandQueueCopy;
+			std::shared_ptr<Command::QueueDx> m_CommandQueueDirect;
+			std::shared_ptr<Command::QueueDx> m_CommandQueueCompute;
 		};
 	}
 }

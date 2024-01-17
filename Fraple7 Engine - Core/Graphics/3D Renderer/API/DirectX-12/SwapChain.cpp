@@ -59,7 +59,7 @@ namespace Fraple7
 			
 			return m_AllowTearing;
 		}
-		uint32_t SwapChain::Create(std::shared_ptr<Command::QueueDx>& Queue)
+		uint32_t SwapChain::Create()
 		{
 			uint32_t Status = FPL_PIPELINE_SWAP_CHAIN_ERROR;
 			const DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {
@@ -78,7 +78,7 @@ namespace Fraple7
 				.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED,
 				.Flags = (AllowTearing() ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u)
 			};
-			m_Device->GetDXGIFactory()->CreateSwapChainForHwnd(Queue->GetCmdQueue().Get(),
+			m_Device->GetDXGIFactory()->CreateSwapChainForHwnd(m_CommandQueue->GetCmdQueue().Get(),
 				m_Window.GetHandle(),
 				&swapChainDesc, nullptr, nullptr, &m_SwapChain1) >> statusCode;
 			m_Device->GetDXGIFactory()->MakeWindowAssociation(m_Window.GetHandle(), DXGI_MWA_NO_ALT_ENTER) >> statusCode;
@@ -87,14 +87,13 @@ namespace Fraple7
 			Status = FPL_SUCCESS
 			return Status;
 		}
-		SwapChain::SwapChain(Window& window, std::shared_ptr<Device>& device, uint32_t bufferCount) 
-			: m_Window((WinWindow&)window), m_Device(device), m_BufferCount(bufferCount)
+		SwapChain::SwapChain(Window& window, std::shared_ptr<Device>& device, uint32_t bufferCount, const std::shared_ptr<Command::QueueDx>& commandQueue)
+			: m_Window((WinWindow&)window), m_Device(device), m_BufferCount(bufferCount), m_CommandQueue(commandQueue)
 		{
 			m_BackBuffers.resize(bufferCount);
 		}
 		SwapChain::~SwapChain()
 		{
-			//m_SwapChain4->Release();
 		}
 		void SwapChain::vSync()
 		{
@@ -102,6 +101,25 @@ namespace Fraple7
 			interval = m_vSync;
 			flags = m_AllowTearing && !m_vSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
 			m_SwapChain4->Present(interval, flags) >> statusCode;
+		}
+		void SwapChain::ResizeSwapChain()
+		{
+			m_Window.SetWidth(std::max(1u, m_Window.GetWidth()));
+			m_Window.SetHeight(std::max(1u, m_Window.GetHeight()));
+			if (m_Device.get() == nullptr)
+				return;
+
+			m_CommandQueue->SignalAndWait();
+			for (size_t i = 0; i < m_BufferCount; i++)
+			{
+				m_BackBuffers[i].Reset();
+			}
+			DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+			m_SwapChain4->GetDesc(&swapChainDesc) >> statusCode;
+			m_SwapChain4->ResizeBuffers(m_BufferCount, m_Window.GetWidth(), m_Window.GetHeight(),
+				swapChainDesc.BufferDesc.Format, swapChainDesc.Flags) >> statusCode;
+
+			RenderTargetView();
 		}
 	}
 }

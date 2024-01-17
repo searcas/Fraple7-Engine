@@ -1,12 +1,13 @@
 #include "pch.h"
 #include "DepthBuffer.h"
 #include "Studio/Platform/Windows/Window.h"
-
+#include "Command.h"
 namespace Fraple7
 {
 	namespace Core
 	{
-		DepthBuffer::DepthBuffer(const ComPtr<ID3D12Device2>& device, const Window& window) : m_Device(device), m_Window(window)
+		DepthBuffer::DepthBuffer(const ComPtr<ID3D12Device2>& device, const Window& window, std::shared_ptr<CommandMgr> commandMgr)
+			: m_Device(device), m_Window((WinWindow&)window), m_CommandMgr(commandMgr)
 		{
 			
 		}
@@ -31,7 +32,13 @@ namespace Fraple7
 		void DepthBuffer::CreateDepthStencilView()
 		{
 			m_DsvHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE{ m_DsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart() };
-			m_Device->CreateDepthStencilView(m_DepthBuffer.Get(), nullptr, m_DsvHandle);
+			D3D12_DEPTH_STENCIL_VIEW_DESC dsv = {};
+			dsv.Format = DXGI_FORMAT_D32_FLOAT;
+			dsv.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			dsv.Texture2D.MipSlice = 0;
+			dsv.Flags = D3D12_DSV_FLAG_NONE;
+
+			m_Device->CreateDepthStencilView(m_DepthBuffer.Get(), &dsv, m_DsvHandle);
 		}
 
 		DepthBuffer::~DepthBuffer()
@@ -43,6 +50,21 @@ namespace Fraple7
 			Create();
 			DescriptorHeap();
 			CreateDepthStencilView();
+		}
+		void DepthBuffer::ResizeDepthBuffer()
+		{
+			if (m_InitCompleted)
+			{
+				// We need to make sure nothing being referenced to 
+				// Depth buffer
+				m_CommandMgr->UnloadAll();
+				
+				m_Window.SetWidth(std::max(1u, m_Window.GetWidth()));
+				m_Window.SetHeight(std::max(1u, m_Window.GetHeight()));
+
+				Create();
+				CreateDepthStencilView();
+			}
 		}
 	}
 }

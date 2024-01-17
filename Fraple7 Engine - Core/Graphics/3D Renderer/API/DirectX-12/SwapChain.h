@@ -10,12 +10,12 @@ namespace Fraple7
 		class SwapChain
 		{
 		public:
-			SwapChain(class Window& window, std::shared_ptr<class  Device>&, uint32_t bufferCount);
+			SwapChain(class Window& window, std::shared_ptr<class Device>&, uint32_t bufferCount, const std::shared_ptr<Command::QueueDx>&);
 			const ComPtr<IDXGISwapChain4>& GetSwapChain() const { return m_SwapChain4; }
 		public:
 			~SwapChain();
 			void vSync();
-			uint32_t Create(std::shared_ptr<Command::QueueDx>& cQueue);
+			uint32_t Create();
 			uint32_t RenderTargetView();
 			bool AllowTearing();
 			uint32_t GetBufferCount() const { return m_BufferCount; }
@@ -24,6 +24,7 @@ namespace Fraple7
 			const ComPtr<ID3D12DescriptorHeap>& GetRTDescHeap() const { return m_RtDescriptorHeap; }
 			const UINT GetRenderTargetSize() const { return m_RenderTargetSize; }
 			void SetVSync(bool sync) { m_vSync = sync; }
+			void ResizeSwapChain();
 		private:
 			std::shared_ptr<class Device>& m_Device;
 			ComPtr<IDXGISwapChain1> m_SwapChain1;
@@ -35,6 +36,8 @@ namespace Fraple7
 			UINT m_RenderTargetSize = 0;
 			BOOL m_AllowTearing = false;
 			bool m_vSync = false;
+			const std::shared_ptr<Command::QueueDx> m_CommandQueue;
+
 		};
 	}
 }

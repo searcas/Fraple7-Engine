@@ -6,6 +6,45 @@ namespace Fraple7
 {
 	namespace Core
 	{
+
+		CommandMgr::CommandMgr(const ComPtr<ID3D12Device2>& device)
+		{
+			m_CommandQueueCopy = std::make_shared<Command::QueueDx>(device, D3D12_COMMAND_LIST_TYPE_COPY);
+			m_CommandQueueDirect = std::make_shared<Command::QueueDx>(device, D3D12_COMMAND_LIST_TYPE_DIRECT);
+			m_CommandQueueCompute = std::make_shared<Command::QueueDx>(device, D3D12_COMMAND_LIST_TYPE_COMPUTE);
+		}
+		
+		CommandMgr::~CommandMgr()
+		{
+			UnloadAll();
+		}
+		const std::shared_ptr<Command::QueueDx>& CommandMgr::GetCommandQueue(D3D12_COMMAND_LIST_TYPE type) const
+		{
+			switch (type)
+			{
+			case D3D12_COMMAND_LIST_TYPE_DIRECT:
+				return m_CommandQueueDirect;
+				break;
+			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
+				return m_CommandQueueCompute;
+				break;
+			case D3D12_COMMAND_LIST_TYPE_COPY:
+				return m_CommandQueueCopy;
+				break;
+			default:
+				throw std::runtime_error{ "Failed Command Queue Type" };
+				break;
+			}
+		}
+
+		void CommandMgr::UnloadAll()
+		{
+			m_CommandQueueCopy->SignalAndWait();
+			m_CommandQueueDirect->SignalAndWait();
+			m_CommandQueueCompute->SignalAndWait();
+		}
+
+
 		Command::QueueDx::~QueueDx()
 		{
 			m_CommandQueue->Signal(m_Fence.Get(), ++m_FenceVal) >> statusCode;
@@ -134,8 +173,7 @@ namespace Fraple7
 		}
 		void Command::QueueDx::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src)
 		{
-			ID3D12GraphicsCommandList2* comList = GetCommandList().Get();
-			comList->CopyResource(dst.Get(), src.Get());
+			GetCommandList()->CopyResource(dst.Get(), src.Get());
 		}
 		void Command::QueueDx::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData)
 		{	
@@ -146,6 +184,6 @@ namespace Fraple7
 			const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), from, to);
 			m_CommandList->ResourceBarrier(1, &barrier);
 		}
-		
-	}
+
+}
 }

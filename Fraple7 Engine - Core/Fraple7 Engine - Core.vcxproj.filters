@@ -36,7 +36,7 @@
     <ClInclude Include="Utilities\Common\Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.h">
+    <ClInclude Include="Graphics\3D Renderer\Renderer\PipeLineDx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Command.h">
@@ -66,7 +66,7 @@
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\3D Renderer\Renderer\Projection.h">
+    <ClInclude Include="Graphics\3D Renderer\Renderer\View\Projection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\IndexBuffer.h">
@@ -101,7 +101,7 @@
     <ClCompile Include="Utilities\ErrorHandling\EngineErrorHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\PipeLineDx.cpp">
+    <ClCompile Include="Graphics\3D Renderer\Renderer\PipeLineDx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Command.cpp">
@@ -128,7 +128,7 @@
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\3D Renderer\Renderer\Projection.cpp">
+    <ClCompile Include="Graphics\3D Renderer\Renderer\View\Projection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\IndexBuffer.cpp">
