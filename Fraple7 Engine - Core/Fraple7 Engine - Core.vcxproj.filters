@@ -84,6 +84,9 @@
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Utilities\Common\ForwardDeclarations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Fraple7 Engine - Core.cpp">

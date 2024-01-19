@@ -1,9 +1,7 @@
 #include "pch.h"
 #include "SwapChain.h"
 #include "Device.h"
-#ifdef WINDOWS
 #include "Studio/Platform/Windows/Window.h"
-#endif
 
 namespace Fraple7
 {
@@ -63,8 +61,8 @@ namespace Fraple7
 		{
 			uint32_t Status = FPL_PIPELINE_SWAP_CHAIN_ERROR;
 			const DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {
-				.Width = m_Window.GetWidth(),
-				.Height = m_Window.GetHeight(),
+				.Width = m_Window->GetWidth(),
+				.Height = m_Window->GetHeight(),
 				.Format = DXGI_FORMAT_R8G8B8A8_UNORM,
 				.Stereo = FALSE,
 				.SampleDesc = {
@@ -79,33 +77,33 @@ namespace Fraple7
 				.Flags = (AllowTearing() ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u)
 			};
 			m_Device->GetDXGIFactory()->CreateSwapChainForHwnd(m_CommandQueue->GetCmdQueue().Get(),
-				m_Window.GetHandle(),
+				m_Window->GetHandle(),
 				&swapChainDesc, nullptr, nullptr, &m_SwapChain1) >> statusCode;
-			m_Device->GetDXGIFactory()->MakeWindowAssociation(m_Window.GetHandle(), DXGI_MWA_NO_ALT_ENTER) >> statusCode;
+			m_Device->GetDXGIFactory()->MakeWindowAssociation(m_Window->GetHandle(), DXGI_MWA_NO_ALT_ENTER) >> statusCode;
 			m_SwapChain1.As(&m_SwapChain4) >> statusCode;
 
 			Status = FPL_SUCCESS
 			return Status;
 		}
-		SwapChain::SwapChain(Window& window, std::shared_ptr<Device>& device, uint32_t bufferCount, const std::shared_ptr<Command::QueueDx>& commandQueue)
-			: m_Window((WinWindow&)window), m_Device(device), m_BufferCount(bufferCount), m_CommandQueue(commandQueue)
+		SwapChain::SwapChain(std::shared_ptr<Studio::Window> window, std::shared_ptr<Device> device, uint32_t bufferCount, const std::shared_ptr<Command::QueueDx>& commandQueue)
+			: m_Window(std::dynamic_pointer_cast<Studio::WinWindow>(window)), m_Device(device), m_BufferCount(bufferCount), m_CommandQueue(commandQueue)
 		{
 			m_BackBuffers.resize(bufferCount);
 		}
 		SwapChain::~SwapChain()
 		{
 		}
-		void SwapChain::vSync()
+		void SwapChain::vSync(bool setSync)
 		{
-			uint16_t interval, flags;
-			interval = m_vSync;
-			flags = m_AllowTearing && !m_vSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
+			UINT interval, flags;
+			interval = (UINT)setSync;
+			flags = m_AllowTearing && !setSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
 			m_SwapChain4->Present(interval, flags) >> statusCode;
 		}
 		void SwapChain::ResizeSwapChain()
 		{
-			m_Window.SetWidth(std::max(1u, m_Window.GetWidth()));
-			m_Window.SetHeight(std::max(1u, m_Window.GetHeight()));
+			m_Window->SetWidth(std::max(1u, m_Window->GetWidth()));
+			m_Window->SetHeight(std::max(1u, m_Window->GetHeight()));
 			if (m_Device.get() == nullptr)
 				return;
 
@@ -116,7 +114,7 @@ namespace Fraple7
 			}
 			DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
 			m_SwapChain4->GetDesc(&swapChainDesc) >> statusCode;
-			m_SwapChain4->ResizeBuffers(m_BufferCount, m_Window.GetWidth(), m_Window.GetHeight(),
+			m_SwapChain4->ResizeBuffers(m_BufferCount, m_Window->GetWidth(), m_Window->GetHeight(),
 				swapChainDesc.BufferDesc.Format, swapChainDesc.Flags) >> statusCode;
 
 			RenderTargetView();

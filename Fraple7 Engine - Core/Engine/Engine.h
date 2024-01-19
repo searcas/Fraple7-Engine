@@ -1,18 +1,21 @@
 #pragma once
+#include "Utilities/Common/ForwardDeclarations.h"
 namespace Fraple7
 {
 	namespace Core
 	{
+		class Renderer;
+
 		class Engine
 		{
 		public:
-			Engine(class Window& window);
+			Engine(std::shared_ptr<Studio::Window> Window);
 			~Engine();
 			int Active();
 			int Init();
 		private:
-			class Window& m_Window;
-			std::atomic_bool m_Stop = false;
+			std::shared_ptr<Studio::WinWindow> m_Window;
+			std::unique_ptr<Renderer> m_Renderer;
 		};
 
 	}

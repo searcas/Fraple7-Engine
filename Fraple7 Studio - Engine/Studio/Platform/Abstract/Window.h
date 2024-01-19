@@ -5,14 +5,13 @@
 #endif
 namespace Fraple7
 {
-	namespace Core
+	namespace Studio
 	{
 		class Window
 		{
 		public:
 			virtual void Initialize() = 0;
-			virtual ~Window() = default;
-			Window() = default;
+			virtual ~Window() noexcept = default;
 			virtual void SetFullScreen() = 0;
 			virtual void SetResize(bool) = 0;
 			virtual bool GetResize()const = 0;

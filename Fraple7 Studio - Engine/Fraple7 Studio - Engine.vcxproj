@@ -49,7 +49,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);WINDOWS;WINDOWS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\DirectX-Headers\include;$(SolutionDir)Fraple7 Engine - Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\DirectXTex;$(SolutionDir)Dependencies\DirectX-Headers\include;$(SolutionDir)Fraple7 Engine - Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -66,7 +66,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);WINDOWS;WINDOWS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\DirectX-Headers\include;$(SolutionDir)Fraple7 Engine - Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\DirectXTex;$(SolutionDir)Dependencies\DirectX-Headers\include;$(SolutionDir)Fraple7 Engine - Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -78,6 +78,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Studio\IO\Keyboard.cpp" />
     <ClCompile Include="Studio\Platform\Windows\Window.cpp" />
     <ClCompile Include="Studio\Studio.cpp" />
   </ItemGroup>
@@ -87,6 +88,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Studio\IO\Keyboard.h" />
     <ClInclude Include="Studio\Platform\Abstract\Window.h" />
     <ClInclude Include="Studio\Platform\Windows\Window.h" />
   </ItemGroup>

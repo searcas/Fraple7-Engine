@@ -53,6 +53,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Fraple7 Studio - Engine;$(SolutionDir)Fraple7 Engine - Core;$(SolutionDir)Dependencies\DirectX-Headers\include;$(SolutionDir)Dependencies\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -83,6 +84,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(SolutionDir)Fraple7 Studio - Engine;$(SolutionDir)Fraple7 Engine - Core;$(SolutionDir)Dependencies\DirectX-Headers\include;$(SolutionDir)Dependencies\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -116,6 +118,7 @@
     <ClInclude Include="Graphics\Texture\Texture.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utilities\Common\Common.h" />
+    <ClInclude Include="Utilities\Common\ForwardDeclarations.h" />
     <ClInclude Include="Utilities\EngineDefines\EngineStatus.h" />
     <ClInclude Include="Utilities\ErrorHandling\EngineErrorHandler.h" />
     <ClInclude Include="Utilities\Logs\Logs.h" />

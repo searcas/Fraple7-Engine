@@ -1,14 +1,14 @@
 #include "pch.h"
 #include "Window.h"
 #include "Utilities/Common/Common.h"
+#include "Graphics/3D Renderer/Renderer/PipeLineDx.h"
 
 #ifdef WINDOWS
 
 namespace Fraple7
 {
-	namespace Core
+	namespace Studio
 	{
-
 		LRESULT CALLBACK WinWindow::HandleMsg(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam) noexcept
 		{
 			bool alt = (::GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
@@ -16,18 +16,18 @@ namespace Fraple7
 			{
 				case WM_SIZE:
 				{
-					if (m_SwapChain.get() == nullptr)
-						break;
-					RECT currentSize = {};
-					::GetClientRect(hwnd, &currentSize);
-					int width = currentSize.right - currentSize.left;
-					int height = currentSize.bottom - currentSize.top;
-					if (m_Width != width || m_Height != height)
+					if (m_PipeLine.get() && m_PipeLine->GetInitStatus())
 					{
-						m_Width = width;
-						m_Height = height;
-						m_SwapChain->ResizeSwapChain();
-						m_DepthBuffer->ResizeDepthBuffer();
+						RECT currentSize = {};
+						::GetClientRect(hwnd, &currentSize);
+						int width = currentSize.right - currentSize.left;
+						int height = currentSize.bottom - currentSize.top;
+						if (m_Width != width || m_Height != height)
+						{
+							m_Width = width;
+							m_Height = height;
+							m_PipeLine->Resize();
+						}
 					}
 					break;
 				}
@@ -58,7 +58,7 @@ namespace Fraple7
 					{
 					case 'G':
 						m_vSync = !m_vSync;
-						m_SwapChain->SetVSync(m_vSync);
+						m_PipeLine->SetvSync(m_vSync);
 						OutputDebugString("vSync Enabled");
 						break;
 						if (alt)
@@ -160,7 +160,7 @@ namespace Fraple7
 			return DefWindowProc(hwnd, msg, wParam, lParam);
 		}
 
-		WinWindow::WinWindow(uint32_t width, uint32_t height, std::string&& name)
+		WinWindow::WinWindow(uint32_t width, uint32_t height, const std::string& name)
 		{
 			HRESULT result;
 			// Register the window class.
@@ -247,7 +247,6 @@ namespace Fraple7
 				::ShowWindow(m_hWnd, SW_NORMAL);
 			}
 		}
-
 
 		uint32_t WinWindow::Run() const
 		{

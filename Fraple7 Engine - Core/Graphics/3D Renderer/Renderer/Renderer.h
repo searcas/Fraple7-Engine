@@ -1,6 +1,5 @@
 #pragma once
 #include "Graphics/3D Renderer/Renderer/PipeLineDx.h"
-#include "Studio/Platform/Windows/Window.h"
 
 namespace Fraple7
 {
@@ -11,13 +10,13 @@ namespace Fraple7
 		private:
 			bool m_FullScreen = false;
 		public:
-			Renderer(Window& window);
-			~Renderer() = default;
+			Renderer(std::shared_ptr<Studio::Window> window);
+			~Renderer();
 			void Render();
 			void Update();
 		private:
-			std::unique_ptr<PipeLineDx> m_PipeLine;
-			WinWindow& m_Window;
+			std::shared_ptr<PipeLineDx> m_PipeLine;
+			std::shared_ptr<Studio::WinWindow> m_Window;
 		};
 
 	}

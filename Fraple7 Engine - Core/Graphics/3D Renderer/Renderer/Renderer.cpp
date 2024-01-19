@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Renderer.h"
 #include <DirectXMath.h>
+#include "Studio/Platform/Windows/Window.h"
 
 namespace Fraple7
 {
@@ -15,12 +16,17 @@ namespace Fraple7
 		// https ://youtu.be/E3wTajGZOsA?si=HMrmKn0jrgJeZ_VW>
 		// https ://jackmin.home.blog/2018/12/14/swapchains-present-and-present-latency/
 		// https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/Samples/Desktop/D3D12ExecuteIndirect/src/DXSample.cpp
-		Renderer::Renderer(Window& window)
-			: m_Window((WinWindow&)window)
+		Renderer::Renderer(std::shared_ptr<Studio::Window> window)
+			: m_Window(std::dynamic_pointer_cast<Studio::WinWindow>(window))
 			
 		{
-			m_PipeLine = std::make_unique<PipeLineDx>(m_Window);
+			m_PipeLine = std::make_shared<PipeLineDx>(m_Window);
 			m_PipeLine->Init();
+			m_Window->SetPipeLineRef(m_PipeLine);
+		}
+
+		Renderer::~Renderer()
+		{
 		}
 	
 	

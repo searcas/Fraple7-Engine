@@ -171,13 +171,13 @@ namespace Fraple7
 			m_Device->CreateCommandList(0, m_Type,
 				m_CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_CommandList)) >> statusCode;
 		}
-		void Command::QueueDx::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src)
+		void Command::QueueDx::Join(const ComPtr<ID3D12GraphicsCommandList2>& commandList, const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src)
 		{
-			GetCommandList()->CopyResource(dst.Get(), src.Get());
+			commandList->CopyResource(dst.Get(), src.Get());
 		}
-		void Command::QueueDx::Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData)
+		void Command::QueueDx::Join(const ComPtr<ID3D12GraphicsCommandList2>& commandList, const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData)
 		{	
-			UpdateSubresources(m_CommandList.Get(), dst.Get(), src.Get(), 0, 0, (UINT)size, srcData.data());
+			UpdateSubresources(commandList.Get(), dst.Get(), src.Get(), 0, 0, (UINT)size, srcData.data());
 		}
 		void Command::QueueDx::Transition(const ComPtr<ID3D12Resource>& buffer, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to)
 		{

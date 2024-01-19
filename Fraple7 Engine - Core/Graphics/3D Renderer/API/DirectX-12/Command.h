@@ -24,8 +24,8 @@ namespace Fraple7
 				uint64_t SignalAndWait();
 
 			public:
-				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src );
-				void Join(const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData);
+				void Join(const ComPtr<ID3D12GraphicsCommandList2>& commandList,const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src );
+				void Join(const ComPtr<ID3D12GraphicsCommandList2>& commandList,const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData);
 				void Transition(const ComPtr<ID3D12Resource>& buffer, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to);
 			private:
 				// Keep track of command allocators that are "in-flight"

@@ -2,14 +2,12 @@
 #include "PipeLineDx.h"
 #include "Utilities/Common/Common.h"
 #include "Studio/Platform/Windows/Window.h"
-
 namespace Fraple7
 {
 	namespace Core
 	{
-
-		PipeLineDx::PipeLineDx(Window& window) : 
-			m_Window((WinWindow&)window)
+		PipeLineDx::PipeLineDx(const std::shared_ptr<Studio::Window>& window) :
+			m_Window(std::dynamic_pointer_cast<Studio::WinWindow>(window))
 		{
 			m_Device = std::make_shared<Device>();
 
@@ -23,10 +21,6 @@ namespace Fraple7
 			m_PSO = std::make_unique<PSO>(m_Device->GetDevice());
 			m_VertexBuffer = std::make_unique<VertexBuffer>();
 			m_IndexBuffer = std::make_unique<IndexBuffer>();
-
-			m_Window.SetSwapChainRef(m_SwapChain);
-			m_Window.SetDepthBufferRef(m_DepthBuffer);
-
 
 			m_Projection = std::make_unique<Projection>(window);
 
@@ -55,27 +49,25 @@ namespace Fraple7
 		{
 			m_SwapChain->Create();
 			m_SwapChain->RenderTargetView();
-			m_DepthBuffer->Init();
 
 			m_VertexBuffer->Create(m_Device->GetDevice());
+			m_DepthBuffer->Create();
 
 			const auto& ComQueue = m_CommandMgr->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
+			const auto& ComList = ComQueue->GetCommandList();
 
-			ComQueue->Join(m_VertexBuffer->GetVertexBuffer(), m_VertexBuffer->GetVertexUploadBuffer());
+			ComQueue->Join(ComList,m_VertexBuffer->GetVertexBuffer(), m_VertexBuffer->GetVertexUploadBuffer());
 			// insert fence to detect when upload is complete
-			ComQueue->SignalAndWait();
 
 			m_VertexBuffer->CreateVertexBufferView();
 			m_IndexBuffer->Create(m_Device->GetDevice());
 
-			ComQueue->Join(m_IndexBuffer->GetIndexBuffer(), m_IndexBuffer->GetIndexUploadBuffer());
-			ComQueue->SignalAndWait();
+			ComQueue->Join(ComList,m_IndexBuffer->GetIndexBuffer(), m_IndexBuffer->GetIndexUploadBuffer());
 
 			m_IndexBuffer->CreateIndexBufferView();
 			m_Texture->Create();
 
-			ComQueue->Join(m_Texture->GetTextureBuffer(), m_Texture->GetTextureUploadBuffer(), m_Texture->GetSubData().size(), m_Texture->GetSubData());
-			ComQueue->SignalAndWait();
+			ComQueue->Join(ComList, m_Texture->GetTextureBuffer(), m_Texture->GetTextureUploadBuffer(), m_Texture->GetSubData().size(), m_Texture->GetSubData());
 
 			m_Texture->DescriptorHeap();
 			// Create descriptor in the heap
@@ -87,13 +79,15 @@ namespace Fraple7
 			// regardless of the size of the screen
 			m_ScissorRect = CD3DX12_RECT{ 0,0, LONG_MAX, LONG_MAX };
 			// specifices the viewable part of the screen to render to
-			m_Viewport = CD3DX12_VIEWPORT{ 0.0f, 0.0f, float(m_Window.GetWidth()), float(m_Window.GetHeight()) };
+			m_Viewport = CD3DX12_VIEWPORT{ 0.0f, 0.0f, float(m_Window->GetWidth()), float(m_Window->GetHeight()) };
+			
 			m_Projection->SetView();
 
-			ComQueue->WaitForFenceCompletion(ComQueue->ExecuteCommandList(ComQueue->GetCommandList()));
+			m_DepthBuffer->InitDescriptorHeap();
+			m_DepthBuffer->CreateDepthStencilView();
 			m_InitComplete = true;
-			m_DepthBuffer->SetInitComplete(m_InitComplete);
-
+			
+			ComQueue->WaitForFenceCompletion(ComQueue->ExecuteCommandList(ComList));
 		}
 		float t = 0.0f;
 		float step = 0.01f;
@@ -114,12 +108,12 @@ namespace Fraple7
 				CommandQueue->Transition(BackBuffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 				FLOAT clearColor[] = {
-
 					sin(2.f * t + 1.f) / 2.f + .5f,
 					sin(3.f * t + 3.f) / 2.f + .5f,
 					sin(5.f * t + 2.f) / 2.f + .5f,
 					1.0f };
 
+				//FLOAT clearColor[]{ 1.0f, 1.0f, 1.0f, 1.0f };
 				CommandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 			}
 			CommandList->ClearDepthStencilView(GetDSVHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
@@ -139,7 +133,7 @@ namespace Fraple7
 			CommandList->SetDescriptorHeaps(1, m_Texture->GetSrvHeap().GetAddressOf());
 			CommandList->SetGraphicsRootDescriptorTable(1, m_Texture->GetSrvHeap()->GetGPUDescriptorHandleForHeapStart());
 			// bind render target & depth stencil
-			CommandList->OMSetRenderTargets(1, &rtv, TRUE, &GetDSVHandle());
+			CommandList->OMSetRenderTargets(1, &rtv, FALSE, &GetDSVHandle());
 
 			{
 				const auto mvp = DirectX::XMMatrixTranspose(
@@ -159,11 +153,22 @@ namespace Fraple7
 			{
 				m_FenceValues[m_CurrentBackBufferIndex] = CommandQueue->ExecuteCommandList(CommandList);
 				// present frame
-				m_SwapChain->vSync();
+				PresentFrames(m_vSync);
 				// insert fence to mark command list completion
 				CommandQueue->WaitForFenceCompletion(m_FenceValues[m_CurrentBackBufferIndex]);
 			}
 			t += step;
+		}
+		void PipeLineDx::PresentFrames(bool set )
+		{
+			m_SwapChain->vSync(set);
+		}
+		void PipeLineDx::Resize()
+		{
+		
+			m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(m_Window->GetWidth()), static_cast<float>(m_Window->GetHeight()));
+			m_SwapChain->ResizeSwapChain();
+			m_DepthBuffer->ResizeDepthBuffer();
 		}
 	}
 }

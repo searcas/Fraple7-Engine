@@ -1,5 +1,7 @@
 #pragma once
 #include <DirectXMath.h>
+#include "Utilities/Common/ForwardDeclarations.h"
+
 namespace Fraple7
 {
 	namespace Core
@@ -7,13 +9,13 @@ namespace Fraple7
 		class Projection
 		{
 		public:
-			Projection(const class Window& window);
+			Projection(const std::shared_ptr<Studio::Window>& window);
 			~Projection();
 			void SetView();
 			const DirectX::XMMATRIX& GetProjectionView() { return _mProjectionView; }
 		private:
 			DirectX::XMMATRIX _mProjectionView{};
-			const Window& window;
+			std::shared_ptr<Studio::WinWindow> m_Window;
 		};
 
 	}

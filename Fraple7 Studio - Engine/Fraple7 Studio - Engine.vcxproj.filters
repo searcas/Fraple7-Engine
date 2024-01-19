@@ -21,12 +21,18 @@
     <ClCompile Include="Studio\Platform\Windows\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Studio\IO\Keyboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Studio\Platform\Abstract\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Studio\Platform\Windows\Window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Studio\IO\Keyboard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
