@@ -2,13 +2,13 @@
 #include "DepthBuffer.h"
 #include "Command.h"
 #include "Studio/Platform/Windows/Window.h"
-
+#include "Device.h"
 namespace Fraple7
 {
 	namespace Core
 	{
-		DepthBuffer::DepthBuffer(const ComPtr<ID3D12Device2>& device, const std::shared_ptr<Studio::Window>& window, std::shared_ptr<CommandMgr> commandMgr)
-			: m_Device(device), m_Window(std::dynamic_pointer_cast<Studio::WinWindow>(window)), m_CommandMgr(commandMgr)
+		DepthBuffer::DepthBuffer( const std::shared_ptr<Studio::Window>& window, std::shared_ptr<CommandMgr> commandMgr)
+			:  m_Window(std::dynamic_pointer_cast<Studio::WinWindow>(window)), m_CommandMgr(commandMgr)
 		{
 				
 		}
@@ -21,7 +21,7 @@ namespace Fraple7
 
 			const D3D12_CLEAR_VALUE clearValue = { .Format = DXGI_FORMAT_D32_FLOAT, .DepthStencil = { 1.0f, 0} };
 
-			m_Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE,
+			Device::GetDevice()->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE,
 				&desc, D3D12_RESOURCE_STATE_DEPTH_WRITE,
 				&clearValue, IID_PPV_ARGS(&m_DepthBuffer)) >> statusCode;
 		}
@@ -29,7 +29,7 @@ namespace Fraple7
 		void DepthBuffer::InitDescriptorHeap()
 		{
 			const D3D12_DESCRIPTOR_HEAP_DESC desc = { .Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV, .NumDescriptors = 1 };
-			m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_DsvDescriptorHeap)) >> statusCode;
+			Device::GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_DsvDescriptorHeap)) >> statusCode;
 		}
 		void DepthBuffer::CreateDepthStencilView()
 		{
@@ -40,7 +40,7 @@ namespace Fraple7
 			dsv.Texture2D.MipSlice = 0;
 			dsv.Flags = D3D12_DSV_FLAG_NONE;
 
-			m_Device->CreateDepthStencilView(m_DepthBuffer.Get(), &dsv, m_DsvHandle);
+			Device::GetDevice()->CreateDepthStencilView(m_DepthBuffer.Get(), &dsv, m_DsvHandle);
 		}
 
 		DepthBuffer::~DepthBuffer()

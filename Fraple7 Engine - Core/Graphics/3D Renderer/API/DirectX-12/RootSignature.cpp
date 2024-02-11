@@ -1,18 +1,46 @@
 #include "pch.h"
 #include "RootSignature.h"
+#include "Device.h"
 #include <DirectXMath.h>
-
 namespace Fraple7
 {
 	namespace Core
 	{
-		RootSignature::RootSignature(const ComPtr<ID3D12Device2>& device) : m_Device(device)
+		RootSignature::RootSignature() 
 		{
 			Init();
 		}
 
 		RootSignature::~RootSignature()
 		{
+		}
+		uint32_t RootSignature::GetDescriptorTableBitMask(D3D12_DESCRIPTOR_HEAP_TYPE type)
+		{
+			uint32_t descriptorTableMask = 0;
+
+			switch (type)
+			{
+			case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
+				descriptorTableMask = m_DescriptorTableBitMask;
+				break;
+			case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
+				descriptorTableMask = m_SamplerTableBitMask;
+				break;
+			case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
+				break;
+			case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
+				break;
+			case D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES:
+				break;
+			default:
+				break;
+			}
+			return descriptorTableMask;
+		}
+		uint32_t RootSignature::GetNumDescriptors(uint32_t rootIndex) const
+		{
+			assert(rootIndex < s_NumDescPerTable);
+			return m_NumDescriptorsPerTable[rootIndex];
 		}
 		void RootSignature::Init()
 		{
@@ -42,7 +70,7 @@ namespace Fraple7
 				}
 				hr >> statusCode;
 			}
-			m_Device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature)) >> statusCode;
+			Device::GetDevice()->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature)) >> statusCode;
 			FPL_LOG("Root Signature has been created", "Noo Error", Logs::INFO);
 
 		}
@@ -50,7 +78,7 @@ namespace Fraple7
 		{
 			D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
 			featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
-			if (FAILED(m_Device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
+			if (FAILED(Device::GetDevice()->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
 			{
 				featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
 			}

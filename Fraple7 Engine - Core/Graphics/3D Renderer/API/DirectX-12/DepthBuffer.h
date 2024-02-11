@@ -10,7 +10,7 @@ namespace Fraple7
 		class DepthBuffer
 		{
 		public:
-			DepthBuffer(const ComPtr<ID3D12Device2>& device, const std::shared_ptr<Studio::Window>& window, std::shared_ptr<CommandMgr> commandMgr);
+			DepthBuffer(const std::shared_ptr<Studio::Window>& window, std::shared_ptr<CommandMgr> commandMgr);
 			~DepthBuffer();
 			void Init();
 			const CD3DX12_CPU_DESCRIPTOR_HANDLE& GetDSVHandle() { return m_DsvHandle; }
@@ -23,7 +23,6 @@ namespace Fraple7
 		private:
 			ComPtr<ID3D12Resource> m_DepthBuffer;
 			ComPtr<ID3D12DescriptorHeap> m_DsvDescriptorHeap;
-			ComPtr<ID3D12Device2> m_Device;
 			CD3DX12_CPU_DESCRIPTOR_HANDLE m_DsvHandle;
 
 			std::shared_ptr<Studio::WinWindow> m_Window;

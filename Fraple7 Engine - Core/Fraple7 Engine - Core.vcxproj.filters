@@ -45,7 +45,7 @@
     <ClInclude Include="Graphics\3D Renderer\Renderer\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\VertexBuffer.h">
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\VertexBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\ResourceMgr.h">
@@ -69,7 +69,7 @@
     <ClInclude Include="Graphics\3D Renderer\Renderer\View\Projection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\IndexBuffer.h">
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\IndexBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\DepthBuffer.h">
@@ -85,6 +85,42 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utilities\Common\ForwardDeclarations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\UploadBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocatorPage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\DynamicDescriptorHeap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\ResourceStateTracker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\RenderTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\AllocationFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\GenerateMipsPSO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\PanoToCubeMapPSO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -113,7 +149,7 @@
     <ClCompile Include="Graphics\3D Renderer\Renderer\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\VertexBuffer.cpp">
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\VertexBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\ResourceMgr.cpp">
@@ -134,7 +170,7 @@
     <ClCompile Include="Graphics\3D Renderer\Renderer\View\Projection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\IndexBuffer.cpp">
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\IndexBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\DepthBuffer.cpp">
@@ -147,6 +183,42 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\SwapChain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\UploadBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocatorPage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\DynamicDescriptorHeap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\ResourceStateTracker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Resource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\RenderTarget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\AllocationFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\GenerateMipsPSO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\PanoToCubeMapPSO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\Buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

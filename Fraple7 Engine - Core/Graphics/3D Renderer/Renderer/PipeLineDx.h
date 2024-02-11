@@ -6,9 +6,9 @@
 #include "Graphics/3D Renderer/API/DirectX-12/Device.h"
 #include "Graphics/3D Renderer/API/DirectX-12/SwapChain.h"
 #include "Graphics/3D Renderer/API/DirectX-12/DepthBuffer.h"
-#include "Graphics/3D Renderer/API/DirectX-12/VertexBuffer.h"
+#include "Graphics/3D Renderer/API/DirectX-12/Memory/VertexBuffer.h"
+#include "Graphics/3D Renderer/API/DirectX-12/Memory/IndexBuffer.h"
 #include "Graphics/3D Renderer/API/DirectX-12/PipelineStateObject.h"
-#include "Graphics/3D Renderer/API/DirectX-12/IndexBuffer.h"
 #include "Graphics/Texture/Texture.h"
 #include "View/Projection.h"
 
@@ -27,7 +27,6 @@ namespace Fraple7
 			~PipeLineDx();
 			const CD3DX12_CPU_DESCRIPTOR_HANDLE& GetDSVHandle() { return m_DepthBuffer->GetDSVHandle(); }
 		public:
-			std::shared_ptr<Device>& GetDevice();
 			std::shared_ptr<SwapChain>& GetSwapChain();
 			void CleanCommandQueue();
 			void Init();
@@ -56,6 +55,7 @@ namespace Fraple7
 			std::vector<uint64_t> m_FenceValues;
 			std::shared_ptr<CommandMgr> m_CommandMgr;
 			bool m_vSync = false;
+			uint64_t m_FrameNumber;
 		};
 
 	}

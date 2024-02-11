@@ -1,6 +1,7 @@
 #pragma once
 #include "Utilities/Common/Common.h"
 #include "directx/d3dx12.h"
+#include "Buffer.h"
 #include <DirectXMath.h>
 namespace Fraple7
 {
@@ -22,19 +23,21 @@ namespace Fraple7
 			{0.69f, 0.30f, 0.40f, 1.f},
 			{0.69f, 0.33f, 0.90f, 1.f},
 		};
-		class IndexBuffer
+		class IndexBuffer : public Buffer
 		{
 		
 		public:
-			IndexBuffer();
+			IndexBuffer(const std::wstring& name);
 			~IndexBuffer();
 			const ComPtr<ID3D12Resource>& GetIndexBuffer() { return m_IndexBuffer; }
 			const ComPtr<ID3D12Resource>& GetIndexUploadBuffer() { return m_IndexUploadBuffer; }
 			void CreateIndexBufferView(UINT vertices = std::size(s_IndexData));
 			const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() { return m_IndexBufferView; }
-			void Create(const ComPtr<ID3D12Device2>&);
-			void CreateColorSide(const ComPtr<ID3D12Device2>&);
+			void Create();
 			UINT GetIndices() { return m_Indices; }
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE GetShaderResourceView(const D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc = nullptr) const override;
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessView(const D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc = nullptr) const override;
+			virtual void CreateViews(size_t numeElements, size_t elementSize) override;
 		private:
 			ComPtr<ID3D12Resource> m_IndexBuffer;
 			ComPtr<ID3D12Resource> m_IndexUploadBuffer;

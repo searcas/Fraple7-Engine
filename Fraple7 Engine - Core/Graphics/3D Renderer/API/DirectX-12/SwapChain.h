@@ -23,6 +23,7 @@ namespace Fraple7
 			bool AllowTearing();
 			uint32_t GetBufferCount() const { return m_BufferCount; }
 			void SetBufferCount(uint32_t val) { m_BufferCount = val; }
+			//std::vector<ComPtr<ID3D12Resource>>& GetBackBuffer() { return m_BackBuffers; }
 			std::vector<ComPtr<ID3D12Resource>>& GetBackBuffer() { return m_BackBuffers; }
 			const ComPtr<ID3D12DescriptorHeap>& GetRTDescHeap() const { return m_RtDescriptorHeap; }
 			const UINT GetRenderTargetSize() const { return m_RenderTargetSize; }

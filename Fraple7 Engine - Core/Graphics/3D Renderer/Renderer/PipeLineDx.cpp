@@ -11,19 +11,17 @@ namespace Fraple7
 		{
 			m_Device = std::make_shared<Device>();
 
-			m_CommandMgr = std::make_shared<CommandMgr>(m_Device->GetDevice());
+			m_CommandMgr = std::make_shared<CommandMgr>();
 
-			m_DepthBuffer = std::make_shared<DepthBuffer>(m_Device->GetDevice(), m_Window, m_CommandMgr);
+			m_DepthBuffer = std::make_shared<DepthBuffer>(m_Window, m_CommandMgr);
 
 			m_SwapChain = std::make_shared<SwapChain>(window, m_Device, 3, m_CommandMgr->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT));
-
-			m_Texture = std::make_unique<Texture>(L"ShibaShitu.png", m_Device->GetDevice());
-			m_PSO = std::make_unique<PSO>(m_Device->GetDevice());
-			m_VertexBuffer = std::make_unique<VertexBuffer>();
-			m_IndexBuffer = std::make_unique<IndexBuffer>();
-
+			std::wstring name = L"ShibaShitu.png";
+			m_Texture = std::make_unique<Texture>(name);
+			m_PSO = std::make_unique<PSO>();
+			m_VertexBuffer = std::make_unique<VertexBuffer>(L"VertexBuffer");
+			m_IndexBuffer = std::make_unique<IndexBuffer>(L"IndexBuffer");
 			m_Projection = std::make_unique<Projection>(window);
-
 			m_FenceValues.resize(m_SwapChain->GetBufferCount());
 
 		}
@@ -31,12 +29,6 @@ namespace Fraple7
 		{
 			m_CommandMgr->UnloadAll();
 		}
-
-		std::shared_ptr<Device>& PipeLineDx::GetDevice()
-		{
-			return m_Device;
-		}
-
 		std::shared_ptr<SwapChain>& PipeLineDx::GetSwapChain()
 		{
 			return m_SwapChain;
@@ -50,7 +42,7 @@ namespace Fraple7
 			m_SwapChain->Create();
 			m_SwapChain->RenderTargetView();
 
-			m_VertexBuffer->Create(m_Device->GetDevice());
+			m_VertexBuffer->Create();
 			m_DepthBuffer->Create();
 
 			const auto& ComQueue = m_CommandMgr->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
@@ -60,7 +52,7 @@ namespace Fraple7
 			// insert fence to detect when upload is complete
 
 			m_VertexBuffer->CreateVertexBufferView();
-			m_IndexBuffer->Create(m_Device->GetDevice());
+			m_IndexBuffer->Create();
 
 			ComQueue->Join(ComList,m_IndexBuffer->GetIndexBuffer(), m_IndexBuffer->GetIndexUploadBuffer());
 
@@ -93,11 +85,10 @@ namespace Fraple7
 		float step = 0.01f;
 		void PipeLineDx::Render()
 		{
-
+			++m_FrameNumber;
 			m_CurrentBackBufferIndex = m_SwapChain->GetSwapChain()->GetCurrentBackBufferIndex();
 
 			auto& BackBuffer = m_SwapChain->GetBackBuffer()[m_CurrentBackBufferIndex];
-
 			auto& CommandQueue = m_CommandMgr->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
 			const auto& CommandList = CommandQueue->GetCommandList();
 
@@ -119,7 +110,7 @@ namespace Fraple7
 			CommandList->ClearDepthStencilView(GetDSVHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
 			// Set Pipeline state
 			CommandList->SetPipelineState(m_PSO->GetPLS().Get());
-			CommandList->SetGraphicsRootSignature(m_PSO->GetRootSig().GetSignature().Get());
+			CommandList->SetGraphicsRootSignature(m_PSO->GetRootSig().GetRootSignature().Get());
 
 			// Configure IA
 			CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

@@ -22,7 +22,7 @@ namespace Fraple7
 
 			}pipelineStateStream;
 		public:
-			PSO(const ComPtr<ID3D12Device2>& m_Device);
+			PSO();
 			void Create();
 			~PSO() = default;
 			const ComPtr<ID3D12PipelineState>& GetPLS() { return m_PipeLineState; }
@@ -30,7 +30,6 @@ namespace Fraple7
 		private:
 			RootSignature m_RootSign;
 			ComPtr<ID3D12PipelineState> m_PipeLineState;
-			const ComPtr<ID3D12Device2>& m_Device;
 		};
 
 
