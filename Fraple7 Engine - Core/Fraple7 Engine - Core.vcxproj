@@ -102,9 +102,13 @@
     <ClInclude Include="Engine\Engine.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Command.h" />
-    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\DepthBuffer.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\CommandList.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\CommandMgr.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\CommandQueue.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\DepthBuffer.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Device.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\GenerateMipsPSO.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\ByteAddressBuffer.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\IndexBuffer.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\AllocationFactory.h" />
@@ -113,6 +117,7 @@
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocator.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocatorPage.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\DynamicDescriptorHeap.h" />
+    <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\StructuredBuffer.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\Memory\UploadBuffer.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\PanoToCubeMapPSO.h" />
     <ClInclude Include="Graphics\3D Renderer\API\DirectX-12\RenderTarget.h" />
@@ -139,11 +144,14 @@
   <ItemGroup>
     <ClCompile Include="Engine\Engine.cpp" />
     <ClCompile Include="Fraple7 Engine - Core.cpp" />
-    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Command.cpp" />
-    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\DepthBuffer.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\CommandList.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\CommandMgr.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\CommandQueue.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\DepthBuffer.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Device.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\GenerateMipsPSO.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\Buffer.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\ByteAddressBuffer.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\IndexBuffer.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Inputlayout.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\AllocationFactory.cpp" />
@@ -151,6 +159,7 @@
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocator.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\DescriptorAllocatorPage.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\DynamicDescriptorHeap.cpp" />
+    <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\StructuredBuffer.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\Memory\UploadBuffer.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\PanoToCubeMapPSO.cpp" />
     <ClCompile Include="Graphics\3D Renderer\API\DirectX-12\RenderTarget.cpp" />

@@ -69,7 +69,12 @@ namespace Fraple7
 			{
 				return CheckFormatSupport(D3D12_FORMAT_SUPPORT1_RENDER_TARGET);
 			}
-
+			bool CheckUAVSupport()
+			{
+				return	CheckFormatSupport(D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW) &&
+						CheckFormatSupport(D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) &&
+						CheckFormatSupport(D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE);
+			}
 			bool CheckDSVSupport() const
 			{
 				return CheckFormatSupport(D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL);

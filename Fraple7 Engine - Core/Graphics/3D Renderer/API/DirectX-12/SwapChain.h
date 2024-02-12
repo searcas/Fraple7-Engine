@@ -2,18 +2,17 @@
 #include "directx/d3dx12.h"
 #include "Utilities/Common/Common.h"
 #include "dxgi1_6.h"
-#include "Command.h"
 
 namespace Fraple7
 {
 	namespace Core
 	{
 		class Device;
-
+		class CommandQueue;
 		class SwapChain
 		{
 		public:
-			SwapChain(std::shared_ptr<Studio::Window> window, std::shared_ptr<Device>, uint32_t bufferCount, const std::shared_ptr<Command::QueueDx>&);
+			SwapChain(std::shared_ptr<Studio::Window> window, std::shared_ptr<Device>, uint32_t bufferCount, const std::shared_ptr<CommandQueue>&);
 			const ComPtr<IDXGISwapChain4>& GetSwapChain() const { return m_SwapChain4; }
 		public:
 			~SwapChain();
@@ -38,7 +37,7 @@ namespace Fraple7
 			ComPtr<ID3D12DescriptorHeap>m_RtDescriptorHeap;
 			UINT m_RenderTargetSize = 0;
 			BOOL m_AllowTearing = false;
-			std::shared_ptr<Command::QueueDx> m_CommandQueue;
+			std::shared_ptr<CommandQueue> m_CommandQueue;
 		};
 	}
 }

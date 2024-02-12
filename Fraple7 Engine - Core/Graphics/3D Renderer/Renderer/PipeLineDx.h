@@ -1,23 +1,25 @@
 #pragma once
 #include "directx/d3dx12.h"
-#include <wrl.h>
-#include <dxgi1_6.h>
-#include "Graphics/3D Renderer/API/DirectX-12/Command.h"
-#include "Graphics/3D Renderer/API/DirectX-12/Device.h"
-#include "Graphics/3D Renderer/API/DirectX-12/SwapChain.h"
-#include "Graphics/3D Renderer/API/DirectX-12/DepthBuffer.h"
-#include "Graphics/3D Renderer/API/DirectX-12/Memory/VertexBuffer.h"
-#include "Graphics/3D Renderer/API/DirectX-12/Memory/IndexBuffer.h"
-#include "Graphics/3D Renderer/API/DirectX-12/PipelineStateObject.h"
-#include "Graphics/Texture/Texture.h"
-#include "View/Projection.h"
-
-#include <vector>
-
 namespace Fraple7
 {
+	
+	namespace Studio
+	{
+		class Window;
+		class WinWindow;
+	}
 	namespace Core
 	{	
+		class SwapChain;
+		class DepthBuffer;
+		class VertexBuffer;
+		class Texture;
+		class IndexBuffer;
+		class DepthBuffer;
+		class CommandMgr;
+		class PSO;
+		class Projection;
+		class Device;
 		class PipeLineDx
 		{
 		private:
@@ -25,7 +27,7 @@ namespace Fraple7
 		public:
 			PipeLineDx(const std::shared_ptr<Studio::Window>& window);
 			~PipeLineDx();
-			const CD3DX12_CPU_DESCRIPTOR_HANDLE& GetDSVHandle() { return m_DepthBuffer->GetDSVHandle(); }
+			const CD3DX12_CPU_DESCRIPTOR_HANDLE& GetDSVHandle();
 		public:
 			std::shared_ptr<SwapChain>& GetSwapChain();
 			void CleanCommandQueue();

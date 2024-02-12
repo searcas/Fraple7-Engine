@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "DepthBuffer.h"
-#include "Command.h"
 #include "Studio/Platform/Windows/Window.h"
-#include "Device.h"
+#include "Graphics/3D Renderer/API/DirectX-12/CommandMgr.h"
+#include "Graphics/3D Renderer/API/DirectX-12/Device.h"
 namespace Fraple7
 {
 	namespace Core

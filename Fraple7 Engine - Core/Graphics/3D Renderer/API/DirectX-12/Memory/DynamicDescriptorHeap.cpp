@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "DynamicDescriptorHeap.h"
 #include "Graphics/3D Renderer/API/DirectX-12/RootSignature.h"
-#include "../Device.h"
+#include "Graphics/3D Renderer/API/DirectX-12/CommandList.h"
+#include "Graphics/3D Renderer/API/DirectX-12/Device.h"
 namespace Fraple7
 {
 	namespace Core
@@ -44,7 +45,7 @@ namespace Fraple7
 		}
 		// This command is not designed and meant to be called directly 
 		// Should use instead Render or Dispatch
-		void DynamicDescriptorHeap::CommitStagedDescriptors(Command::List& list, std::function<void(ID3D12GraphicsCommandList2*, UINT, D3D12_GPU_DESCRIPTOR_HANDLE)> setFunc)
+		void DynamicDescriptorHeap::CommitStagedDescriptors(CommandList& list, std::function<void(ID3D12GraphicsCommandList2*, UINT, D3D12_GPU_DESCRIPTOR_HANDLE)> setFunc)
 		{
 			uint32_t numDescriptorsToCommit = ComputeStaleDescriptorCount();
 
@@ -89,15 +90,15 @@ namespace Fraple7
 
 
 		}
-		void DynamicDescriptorHeap::CommitStagedDescriptorsRender(Command::List& list)
+		void DynamicDescriptorHeap::CommitStagedDescriptorsRender(CommandList& list)
 		{
 			CommitStagedDescriptors(list, &ID3D12GraphicsCommandList::SetGraphicsRootDescriptorTable);
 		}
-		void DynamicDescriptorHeap::CommitStagedDescriptorsDispatch(Command::List& list)
+		void DynamicDescriptorHeap::CommitStagedDescriptorsDispatch(CommandList& list)
 		{
 			CommitStagedDescriptors(list ,&ID3D12GraphicsCommandList::SetComputeRootDescriptorTable);
 		}
-		D3D12_GPU_DESCRIPTOR_HANDLE DynamicDescriptorHeap::CopyDescriptor(Command::List& list, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptor)
+		D3D12_GPU_DESCRIPTOR_HANDLE DynamicDescriptorHeap::CopyDescriptor(CommandList& list, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptor)
 		{
 			if (!m_CurrentDescriptorHeap || m_NumFreeHandles < 1)
 			{
@@ -117,7 +118,7 @@ namespace Fraple7
 			m_NumFreeHandles -= 1;
 			return hGPU;
 		}
-		void DynamicDescriptorHeap::SetDescriptorHeap(Command::List& list, D3D12_DESCRIPTOR_HEAP_TYPE heapType, ID3D12DescriptorHeap* heap)
+		void DynamicDescriptorHeap::SetDescriptorHeap(CommandList& list, D3D12_DESCRIPTOR_HEAP_TYPE heapType, ID3D12DescriptorHeap* heap)
 		{
 			if (m_DescriptorHeaps[heapType] != heap)
 			{
@@ -125,7 +126,7 @@ namespace Fraple7
 				BindDescriptorHeaps(list);
 			}
 		}
-		void DynamicDescriptorHeap::BindDescriptorHeaps(Command::List& list)
+		void DynamicDescriptorHeap::BindDescriptorHeaps(CommandList& list)
 		{
 			UINT numDescriptorHeaps = 0;
 

@@ -1,25 +1,25 @@
 #pragma once
 #include "directx/d3dx12.h"
 #include "Utilities/Common/Common.h"
-#include "Graphics/3D Renderer/API/DirectX-12/Command.h"
 
 namespace Fraple7
 {
 	namespace Core
 	{
 		class RootSignature;
+		class CommandList;
 		class DynamicDescriptorHeap
 		{
 		public:
 			DynamicDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t numDescriptorsPerHeap = 1024);
 			~DynamicDescriptorHeap();
 			void StageDescriptors(uint32_t rootParameterIndex, uint32_t offset, uint32_t numDescriptors, const D3D12_CPU_DESCRIPTOR_HANDLE srcDescriptors);
-			void CommitStagedDescriptors(Command::List& list,std::function<void(ID3D12GraphicsCommandList2*, UINT, D3D12_GPU_DESCRIPTOR_HANDLE)> setFunc);
-			void CommitStagedDescriptorsRender(Command::List& list);
-			void CommitStagedDescriptorsDispatch(Command::List& list);
-			D3D12_GPU_DESCRIPTOR_HANDLE CopyDescriptor(Command::List& list, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptor);
-			void SetDescriptorHeap(Command::List& list, D3D12_DESCRIPTOR_HEAP_TYPE heapType, ID3D12DescriptorHeap* heap);
-			void BindDescriptorHeaps(Command::List& list);
+			void CommitStagedDescriptors(CommandList& list,std::function<void(ID3D12GraphicsCommandList2*, UINT, D3D12_GPU_DESCRIPTOR_HANDLE)> setFunc);
+			void CommitStagedDescriptorsRender(CommandList& list);
+			void CommitStagedDescriptorsDispatch(CommandList& list);
+			D3D12_GPU_DESCRIPTOR_HANDLE CopyDescriptor(CommandList& list, D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptor);
+			void SetDescriptorHeap(CommandList& list, D3D12_DESCRIPTOR_HEAP_TYPE heapType, ID3D12DescriptorHeap* heap);
+			void BindDescriptorHeaps(CommandList& list);
 			void ParseRootSignature(const std::shared_ptr<RootSignature>& RootSignature);
 
 			void Reset();

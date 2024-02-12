@@ -32,7 +32,7 @@ namespace Fraple7
 			const ComPtr<ID3D12Resource>& GetIndexBuffer() { return m_IndexBuffer; }
 			const ComPtr<ID3D12Resource>& GetIndexUploadBuffer() { return m_IndexUploadBuffer; }
 			void CreateIndexBufferView(UINT vertices = std::size(s_IndexData));
-			const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() { return m_IndexBufferView; }
+			const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const { return m_IndexBufferView; }
 			void Create();
 			UINT GetIndices() { return m_Indices; }
 			virtual D3D12_CPU_DESCRIPTOR_HANDLE GetShaderResourceView(const D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc = nullptr) const override;

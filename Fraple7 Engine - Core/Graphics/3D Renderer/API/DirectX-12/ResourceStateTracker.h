@@ -1,13 +1,13 @@
 #pragma once
 #include "directx/d3dx12.h"
 #include "Utilities/Common/Common.h"
-#include "Command.h"
 
 namespace Fraple7
 {
 	namespace Core
 	{
 		class Resource;
+		class CommandList;
 		class ResourceStateTracker
 		{
 		public:
@@ -19,8 +19,8 @@ namespace Fraple7
 			void TransitionResource(const Resource& resource, D3D12_RESOURCE_STATES stateAfter, UINT subResource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 			void UAVBarrier(const Resource* resource = nullptr);
 			void AliasBarrier(const Resource* resourceBefore = nullptr, const Resource* resourceAfter = nullptr);
-			void FlushResourceBarriers(Command::List&);
-			uint32_t FlushPendingResourceBarriers(Command::List& list);
+			void FlushResourceBarriers(CommandList&);
+			uint32_t FlushPendingResourceBarriers(CommandList& list);
 			void CommitFinalResourceStates();
 
 			void Reset();

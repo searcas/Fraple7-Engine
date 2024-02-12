@@ -1,215 +1,26 @@
 #include "pch.h"
-#include "Command.h"
-#include "Utilities/Common/Common.h"
-#include "Utilities/Math/Math.h"
-#include "Resource.h"
-#include "Memory/UploadBuffer.h"
+#include "CommandList.h"
+#include "Device.h"
 #include "ResourceStateTracker.h"
-#include "Resource.h"
-#include "Memory/DynamicDescriptorHeap.h"
 #include "RootSignature.h"
+#include "Memory/UploadBuffer.h"
+#include "Memory/DynamicDescriptorHeap.h"
+#include "Memory/StructuredBuffer.h"
 #include "Memory/VertexBuffer.h"
 #include "Memory/IndexBuffer.h"
-#include "RenderTarget.h"
 #include "GenerateMipsPSO.h"
 #include "PanoToCubeMapPSO.h"
+#include "RenderTarget.h"
+
+#include "Utilities/Math/Math.h"
+#include "CommandMgr.h"
+#include "CommandQueue.h"
 namespace Fraple7
 {
 	namespace Core
 	{
-		CommandMgr::CommandMgr()
-		{
-			m_CommandQueueCopy = std::make_shared<Command::QueueDx>(D3D12_COMMAND_LIST_TYPE_COPY);
-			m_CommandQueueDirect = std::make_shared<Command::QueueDx>(D3D12_COMMAND_LIST_TYPE_DIRECT);
-			m_CommandQueueCompute = std::make_shared<Command::QueueDx>(D3D12_COMMAND_LIST_TYPE_COMPUTE);
-		}
 
-		CommandMgr::~CommandMgr()
-		{
-			UnloadAll();
-		}
-		const std::shared_ptr<Command::QueueDx>& CommandMgr::GetCommandQueue(D3D12_COMMAND_LIST_TYPE type) const
-		{
-			switch (type)
-			{
-			case D3D12_COMMAND_LIST_TYPE_DIRECT:
-				return m_CommandQueueDirect;
-				break;
-			case D3D12_COMMAND_LIST_TYPE_COMPUTE:
-				return m_CommandQueueCompute;
-				break;
-			case D3D12_COMMAND_LIST_TYPE_COPY:
-				return m_CommandQueueCopy;
-				break;
-			default:
-				throw std::runtime_error{ "Failed Command Queue Type" };
-				break;
-			}
-		}
-
-		void CommandMgr::UnloadAll()
-		{
-			m_CommandQueueCopy->SignalAndWait();
-			m_CommandQueueDirect->SignalAndWait();
-			m_CommandQueueCompute->SignalAndWait();
-		}
-
-
-		Command::QueueDx::~QueueDx()
-		{
-			m_CommandQueue->Signal(m_Fence.Get(), ++m_FenceVal) >> statusCode;
-			m_Fence->SetEventOnCompletion(m_FenceVal, m_FenceEvent) >> statusCode;
-
-			if (WaitForSingleObject(m_FenceEvent, 2000) == WAIT_FAILED)
-			{
-				GetLastError() >> statusCode;
-			}
-		}
-		Command::QueueDx::QueueDx(D3D12_COMMAND_LIST_TYPE commandListType) : 
-			m_CommandListType(commandListType)
-		{
-			const D3D12_COMMAND_QUEUE_DESC desc = {
-				.Type = commandListType,
-				.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL,
-				.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE,
-				.NodeMask = 0
-			};
-			m_Desc = desc;
-			CreateCommandQueue();
-			CreateFence();
-			CreateAnEvent();
-		}
-		ComPtr<ID3D12GraphicsCommandList2> Command::QueueDx::GetCommandList()
-		{
-			if (!m_CommandAllocatorQueue.empty() && IsFenceReached(m_CommandAllocatorQueue.front().fenceValue))
-			{
-				m_CommandAllocator = m_CommandAllocatorQueue.front().commandAllocator;
-				m_CommandAllocatorQueue.pop();
-				m_CommandAllocator->Reset() >> statusCode;
-			}
-			else
-			{
-				CreateCommandAllocatator();
-			}
-			if (!m_CommandListQueue.empty())
-			{
-				m_CommandList = m_CommandListQueue.front();
-				m_CommandListQueue.pop();
-				m_CommandList->Reset(m_CommandAllocator.Get(), nullptr) >> statusCode;
-			}
-			else
-			{
-				CreateCommandList();
-			}
-			// Bind command allocator with command list 
-			// so we can get when command list is executed
-			m_CommandList->SetPrivateDataInterface(__uuidof(ID3D12CommandAllocator), m_CommandAllocator.Get()) >> statusCode;
-			return m_CommandList;
-		}
-		std::shared_ptr<Command::List> Command::QueueDx::GetCommandListClass()
-		{
-			std::shared_ptr<Command::List> commandList;
-			if (!m_AvailableCommandLists.Empty())
-			{
-				m_AvailableCommandLists.TryPop(commandList);
-			}
-			else
-			{
-				commandList = std::make_shared<Command::List>(m_CommandListType);
-			}
-			return commandList;
-		}
-		void Command::QueueDx::CreateAnEvent()
-		{
-			m_FenceEvent = CreateEventW(nullptr, FALSE, FALSE, FALSE);
-			if (!m_FenceEvent)
-			{
-				GetLastError() >> statusCode;
-				throw std::runtime_error{ "Failed to create fence event" };
-			}
-		}
-		void Command::QueueDx::CreateFence()
-		{
-			Device::GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence)) >> statusCode;
-		}
-		void Command::QueueDx::WaitForFenceCompletion(uint64_t fenceValue)
-		{
-			if (!IsFenceReached(fenceValue))
-			{
-				m_Fence->SetEventOnCompletion(m_FenceVal, m_FenceEvent) >> statusCode;
-				if (::WaitForSingleObject(m_FenceEvent, DWORD_MAX) == WAIT_FAILED)
-				{
-					GetLastError() >> statusCode;
-				}
-			}
-		}
-		uint64_t Command::QueueDx::Signal() const
-		{
-			m_CommandQueue->Signal(m_Fence.Get(), ++m_FenceVal) >> statusCode;
-			return m_FenceVal;
-		}
-		uint64_t Command::QueueDx::SignalAndWait()
-		{
-			uint64_t signal = Signal();
-			WaitForFenceCompletion(signal);
-			return signal;
-		}
-		uint64_t Command::QueueDx::ExecuteCommandList(const ComPtr<ID3D12GraphicsCommandList2>& commandList)
-		{
-			commandList->Close();
-			ID3D12CommandAllocator* commandAllocator;
-			UINT dataSize = sizeof(commandAllocator);
-
-			commandList->GetPrivateData(__uuidof(ID3D12CommandAllocator), &dataSize, &commandAllocator) >> statusCode;
-
-			ID3D12CommandList* const pComandLists[] = { commandList.Get() };
-			m_CommandQueue->ExecuteCommandLists(1, pComandLists);
-
-			uint64_t fenceValue = Signal();
-
-			m_CommandAllocatorQueue.emplace(CommandAllocatorBundle{ fenceValue, commandAllocator });
-			m_CommandListQueue.push(commandList);
-
-			// We can safe release command allocator
-			// Since we transfered in the command allocator queue.
-			m_CommandAllocator->Release();
-			return fenceValue;
-		}
-		uint32_t Command::QueueDx::CreateCommandQueue()
-		{
-			Device::GetDevice()->CreateCommandQueue(&m_Desc, IID_PPV_ARGS(&m_CommandQueue)) >> statusCode;
-			return FPL_SUCCESS;
-		}
-
-		bool Command::QueueDx::IsFenceReached(uint64_t fenceVal)
-		{
-			return m_Fence->GetCompletedValue() >= fenceVal;
-		}
-
-		void Command::QueueDx::CreateCommandAllocatator()
-		{
-			Device::GetDevice()->CreateCommandAllocator(m_CommandListType, IID_PPV_ARGS(&m_CommandAllocator)) >> statusCode;
-		}
-		void Command::QueueDx::CreateCommandList()
-		{
-			Device::GetDevice()->CreateCommandList(0, m_CommandListType,
-				m_CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_CommandList)) >> statusCode;
-		}
-		void Command::QueueDx::Join(const ComPtr<ID3D12GraphicsCommandList2>& commandList, const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src)
-		{
-			commandList->CopyResource(dst.Get(), src.Get());
-		}
-		void Command::QueueDx::Join(const ComPtr<ID3D12GraphicsCommandList2>& commandList, const ComPtr<ID3D12Resource>& dst, const ComPtr<ID3D12Resource>& src, size_t size, const std::vector<D3D12_SUBRESOURCE_DATA>& srcData)
-		{
-			UpdateSubresources(commandList.Get(), dst.Get(), src.Get(), 0, 0, (UINT)size, srcData.data());
-		}
-		void Command::QueueDx::Transition(const ComPtr<ID3D12Resource>& buffer, D3D12_RESOURCE_STATES from, D3D12_RESOURCE_STATES to)
-		{
-			const auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), from, to);
-			m_CommandList->ResourceBarrier(1, &barrier);
-		}
-
-		Command::List::List(D3D12_COMMAND_LIST_TYPE type)
+		CommandList::CommandList(D3D12_COMMAND_LIST_TYPE type)
 			: m_CommandListType(type)
 		{
 			Device::GetDevice()->CreateCommandAllocator(m_CommandListType, IID_PPV_ARGS(&m_CommandAllocator)) >> statusCode;
@@ -224,14 +35,13 @@ namespace Fraple7
 				m_DynamicDescriptorHeap[i] = std::make_unique<DynamicDescriptorHeap>(static_cast<D3D12_DESCRIPTOR_HEAP_TYPE>(i));
 				m_DescriptorHeaps[i] = nullptr;
 			}
-
 		}
 
-		Command::List::~List()
+		CommandList::~CommandList()
 		{
 		}
 
-		void Command::List::TransitionBarrier(ComPtr<ID3D12Resource> resource, D3D12_RESOURCE_STATES stateAfter, UINT subResource, bool flushBarriers)
+		void CommandList::TransitionBarrier(ComPtr<ID3D12Resource> resource, D3D12_RESOURCE_STATES stateAfter, UINT subResource, bool flushBarriers)
 		{
 			if (resource)
 			{
@@ -243,26 +53,26 @@ namespace Fraple7
 				FlushResourceBarriers();
 			}
 		}
-		void Command::List::TransitionBarrier(const Resource& resource, D3D12_RESOURCE_STATES stateAfter, UINT subResource, bool flushBarriers)
+		void CommandList::TransitionBarrier(const Resource& resource, D3D12_RESOURCE_STATES stateAfter, UINT subResource, bool flushBarriers)
 		{
 			TransitionBarrier(resource.GetD3D12Resource(), stateAfter, subResource, flushBarriers);
 		}
 
-		void Command::List::CopyResource(Resource& dstRest, const Resource& srcRes)
+		void CommandList::CopyResource(Resource& dstRes, const Resource& srcRes)
 		{
-			TransitionBarrier(dstRest, D3D12_RESOURCE_STATE_COPY_DEST);
-			TransitionBarrier(dstRest, D3D12_RESOURCE_STATE_COPY_DEST);
+			CopyResource(dstRes.GetD3D12Resource(), srcRes.GetD3D12Resource());
+		}
+		void CommandList::CopyResource(ComPtr<ID3D12Resource> dstResource, ComPtr<ID3D12Resource> srcResource)
+		{
+			TransitionBarrier(dstResource, D3D12_RESOURCE_STATE_COPY_DEST);
+			TransitionBarrier(srcResource, D3D12_RESOURCE_STATE_COPY_SOURCE);
 
 			FlushResourceBarriers();
-			m_CommandList->CopyResource(dstRest.GetD3D12Resource().Get(), srcRes.GetD3D12Resource().Get());
-			TrackResource(dstRest);
-			TrackResource(srcRes);
+			m_CommandList->CopyResource(dstResource.Get(), srcResource.Get());
+			TrackResource(dstResource);
+			TrackResource(srcResource);
 		}
-		void Command::List::CopyResource(ComPtr<ID3D12Resource> dstRes, ComPtr<ID3D12Resource> src)
-		{
-
-		}
-		void Command::List::UAVBarrier(ComPtr<ID3D12Resource> resource, bool flushBarriers)
+		void CommandList::UAVBarrier(ComPtr<ID3D12Resource> resource, bool flushBarriers)
 		{
 			auto barrier = CD3DX12_RESOURCE_BARRIER::UAV(resource.Get());
 			m_ResourceStateTracker->ResourceBarrier(barrier);
@@ -272,15 +82,15 @@ namespace Fraple7
 				FlushResourceBarriers();
 			}
 		}
-		void Command::List::UAVBarrier(const Resource& resource, bool flushBarriers)
+		void CommandList::UAVBarrier(const Resource& resource, bool flushBarriers)
 		{
 			UAVBarrier(resource.GetD3D12Resource(), flushBarriers);
 		}
-		void Command::List::AliasingBarrier(const Resource& beforeResource, const Resource& afterResource, bool flushBarriers)
+		void CommandList::AliasingBarrier(const Resource& beforeResource, const Resource& afterResource, bool flushBarriers)
 		{
 			AliasingBarrier(beforeResource.GetD3D12Resource(), afterResource.GetD3D12Resource(), flushBarriers);
 		}
-		void Command::List::AliasingBarrier(ComPtr<ID3D12Resource> beforeRes, ComPtr<ID3D12Resource> afterRes, bool flushBarriers)
+		void CommandList::AliasingBarrier(ComPtr<ID3D12Resource> beforeRes, ComPtr<ID3D12Resource> afterRes, bool flushBarriers)
 		{
 			auto barrier = CD3DX12_RESOURCE_BARRIER::Aliasing(beforeRes.Get(), afterRes.Get());
 			m_ResourceStateTracker->ResourceBarrier(barrier);
@@ -291,31 +101,33 @@ namespace Fraple7
 			}
 
 		}
-		void Command::List::FlushResourceBarriers()
+		void CommandList::FlushResourceBarriers()
 		{
 			m_ResourceStateTracker->FlushResourceBarriers(*this);
 		}
-		void Command::List::SetGraphicsDynamicConstantBuffer(uint32_t rootParameterIndex, size_t sizeInBytes, const void* data)
+		void CommandList::SetGraphicsDynamicConstantBuffer(uint32_t rootParameterIndex, size_t sizeInBytes, const void* data)
 		{
 			auto heapAllocation = m_UploadBuffer->Allocate(sizeInBytes, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 			memcpy(heapAllocation.CPU, data, sizeInBytes);
 			m_CommandList->SetGraphicsRootConstantBufferView(rootParameterIndex, heapAllocation.GPU);
 		}
 
-		void Command::List::SetGraphics32BitConstants(uint32_t rootParameterIndex, uint32_t numConstants, const void* constants)
+		void CommandList::SetGraphics32BitConstants(uint32_t rootParameterIndex, uint32_t numConstants, const void* constants)
 		{
+			m_CommandList->SetGraphicsRoot32BitConstants(rootParameterIndex, numConstants, constants, 0);
 		}
 
-		void Command::List::SetCompute32BitConstants(uint32_t rootParameterIndex, uint32_t numConstants, const void* constants)
+		void CommandList::SetCompute32BitConstants(uint32_t rootParameterIndex, uint32_t numConstants, const void* constants)
 		{
+			m_CommandList->SetComputeRoot32BitConstants(rootParameterIndex, numConstants, constants, 0);
 		}
 
-		void Command::List::SetPipelineState(ComPtr<ID3D12PipelineState> pipelineState)
+		void CommandList::SetPipelineState(ComPtr<ID3D12PipelineState> pipelineState)
 		{
 			m_CommandList->SetPipelineState(pipelineState.Get());
 			TrackResource(pipelineState);
 		}
-		void Command::List::SetGraphicsRootSignature(const std::shared_ptr<RootSignature>& rootSignature)
+		void CommandList::SetGraphicsRootSignature(const std::shared_ptr<RootSignature>& rootSignature)
 		{
 			auto d3d12RootSignature = rootSignature->GetRootSignature();
 
@@ -332,7 +144,7 @@ namespace Fraple7
 			}
 
 		}
-		void Command::List::SetComputeRootSignature(const std::shared_ptr<RootSignature>& rootSignature)
+		void CommandList::SetComputeRootSignature(const std::shared_ptr<RootSignature>& rootSignature)
 		{
 			auto d3d12RootSignature = rootSignature->GetRootSignature();
 
@@ -349,22 +161,25 @@ namespace Fraple7
 				TrackResource(m_RootSignature->GetRootSignature().Get());
 			}
 		}
-		void Command::List::SetViewPort(const D3D12_VIEWPORT& viewport)
+		void CommandList::SetViewPort(const D3D12_VIEWPORT& viewport)
 		{
+			SetViewPorts({ viewport });
 		}
-		void Command::List::SetViewPorts(const std::vector<D3D12_VIEWPORT>& viewports)
+		void CommandList::SetViewPorts(const std::vector<D3D12_VIEWPORT>& viewports)
 		{
+			assert(viewports.size() < D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE);
+			m_CommandList->RSSetViewports(static_cast<UINT>(viewports.size()), viewports.data());
 		}
-		void Command::List::SetScissorRect(const D3D12_RECT& scissorRect)
+		void CommandList::SetScissorRect(const D3D12_RECT& scissorRect)
 		{
 			SetScissorRect({ scissorRect });
 		}
-		void Command::List::SetScissorRects(const std::vector<D3D12_RECT>& scissorRects)
+		void CommandList::SetScissorRects(const std::vector<D3D12_RECT>& scissorRects)
 		{
 			assert(scissorRects.size() < D3D12_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE);
 			m_CommandList->RSSetScissorRects(static_cast<UINT>(scissorRects.size()), scissorRects.data());
 		}
-		void Command::List::SetShaderResourceView(uint32_t rootParameterIndex, uint32_t descriptorOffset, const Resource& resource, D3D12_RESOURCE_STATES stateAfter, UINT firstSubResource, UINT numSubResources, const D3D12_SHADER_RESOURCE_VIEW_DESC* srv)
+		void CommandList::SetShaderResourceView(uint32_t rootParameterIndex, uint32_t descriptorOffset, const Resource& resource, D3D12_RESOURCE_STATES stateAfter, UINT firstSubResource, UINT numSubResources, const D3D12_SHADER_RESOURCE_VIEW_DESC* srv)
 		{
 			if (numSubResources < D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES)
 			{
@@ -382,7 +197,7 @@ namespace Fraple7
 
 			TrackResource(resource);
 		}
-		void Command::List::SetUnorderedAccessView(uint32_t rootParameterIndex,
+		void CommandList::SetUnorderedAccessView(uint32_t rootParameterIndex,
 			uint32_t descriptorOffset,
 			const Resource& resource,
 			D3D12_RESOURCE_STATES stateAfter,
@@ -400,13 +215,12 @@ namespace Fraple7
 			else
 			{
 				TransitionBarrier(resource, stateAfter);
-
 			}
 			m_DynamicDescriptorHeap[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]->StageDescriptors(rootParameterIndex, descriptorOffset, 1, resource.GetUnorderedAccessView(uav));
 
 			TrackResource(resource);
 		}
-		void Command::List::SetRenderTarget(const RenderTarget& renderTarget)
+		void CommandList::SetRenderTarget(const RenderTarget& renderTarget)
 		{
 			std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> renderTargetDescriptors;
 			renderTargetDescriptors.reserve(AttachmentPoint::NumAttachmentPoints);
@@ -437,7 +251,7 @@ namespace Fraple7
 			D3D12_CPU_DESCRIPTOR_HANDLE* pDSV = depthstencilDescriptor.ptr != 0 ? &depthstencilDescriptor : nullptr;
 			m_CommandList->OMSetRenderTargets(static_cast<UINT>(renderTargetDescriptors.size()), renderTargetDescriptors.data(), FALSE, pDSV);
 		}
-		void Command::List::Render(uint32_t vertexCount, uint32_t instanceCount, uint32_t startVertex, uint32_t startInstance)
+		void CommandList::Render(uint32_t vertexCount, uint32_t instanceCount, uint32_t startVertex, uint32_t startInstance)
 		{
 			FlushResourceBarriers();
 
@@ -447,7 +261,7 @@ namespace Fraple7
 			}
 			m_CommandList->DrawInstanced(vertexCount, instanceCount, startVertex, startInstance);
 		}
-		void Command::List::RenderIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t startIndex, int32_t baseVertex, uint32_t startInstance)
+		void CommandList::RenderIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t startIndex, int32_t baseVertex, uint32_t startInstance)
 		{
 			FlushResourceBarriers();
 
@@ -457,7 +271,7 @@ namespace Fraple7
 			}
 			m_CommandList->DrawIndexedInstanced(indexCount, instanceCount, startIndex, baseVertex, startInstance);
 		}
-		void Command::List::Dispatch(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ)
+		void CommandList::Dispatch(uint32_t numGroupsX, uint32_t numGroupsY, uint32_t numGroupsZ)
 		{
 			FlushResourceBarriers();
 
@@ -467,7 +281,7 @@ namespace Fraple7
 			}
 			m_CommandList->Dispatch(numGroupsX, numGroupsY, numGroupsZ);
 		}
-		bool Command::List::Close(Command::List& pendingCommandList)
+		bool CommandList::Close(CommandList& pendingCommandList)
 		{
 			FlushResourceBarriers();
 			m_CommandList->Close();
@@ -477,12 +291,12 @@ namespace Fraple7
 
 			return numPendingBarriers != 0;
 		}
-		void Command::List::Close()
+		void CommandList::Close()
 		{
 			FlushResourceBarriers();
 			m_CommandList->Close();
 		}
-		void Command::List::Reset()
+		void CommandList::Reset()
 		{
 			m_CommandAllocator->Reset() >> statusCode;
 			m_CommandList->Reset(m_CommandAllocator.Get(), nullptr) >> statusCode;
@@ -501,19 +315,19 @@ namespace Fraple7
 			m_ComputeCommandList = nullptr;
 		}
 
-		void Command::List::TrackResource(ComPtr<ID3D12Object> object)
+		void CommandList::TrackResource(ComPtr<ID3D12Object> object)
 		{
 			m_TrackedObjects.push_back(object);
 		}
-		void Command::List::TrackResource(const Resource& resource)
+		void CommandList::TrackResource(const Resource& resource)
 		{
 			this->TrackResource(resource.GetD3D12Resource());
 		}
-		void Command::List::ReleaseTrackedObjects()
+		void CommandList::ReleaseTrackedObjects()
 		{
 			m_TrackedObjects.clear();
 		}
-		void Command::List::SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, ID3D12DescriptorHeap* heap)
+		void CommandList::SetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, ID3D12DescriptorHeap* heap)
 		{
 			if (m_DescriptorHeaps[heapType] != heap)
 			{
@@ -521,7 +335,7 @@ namespace Fraple7
 				BindDescriptorHeaps();
 			}
 		}
-		void Command::List::BindDescriptorHeaps()
+		void CommandList::BindDescriptorHeaps()
 		{
 			UINT numDescriptorHeaps = 0;
 			ID3D12DescriptorHeap* descriptorHeaps[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] = {};
@@ -537,19 +351,22 @@ namespace Fraple7
 			m_CommandList->SetDescriptorHeaps(numDescriptorHeaps, descriptorHeaps);
 		}
 
-		void Command::List::CopyByteAddressBuffer(ByteAddressBuffer& byteAddressBuffer, size_t bufferSize, const void* bufferData)
+		void CommandList::CopyByteAddressBuffer(ByteAddressBuffer& byteAddressBuffer, size_t bufferSize, const void* bufferData)
 		{
+			CopyBuffer(byteAddressBuffer, 1, bufferSize, bufferData, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
 		}
 
-		void Command::List::CopyStructuredBuffer(StructuredBuffer& structuredBuffer, size_t numElements, const void* bufferData)
+		void CommandList::CopyStructuredBuffer(StructuredBuffer& structuredBuffer, size_t numElements, size_t elementSize, const void* bufferData)
 		{
+			CopyBuffer(structuredBuffer, numElements, elementSize, bufferData, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
 		}
 
-		void Command::List::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY primitiveTopology)
+		void CommandList::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY primitiveTopology)
 		{
+			m_CommandList->IASetPrimitiveTopology(primitiveTopology);
 		}
 
-		void Command::List::LoadTextureFromFile(Texture& texture, const std::wstring& filename, TextureUsage textureUsage)
+		void CommandList::LoadTextureFromFile(Texture& texture, const std::wstring& filename, std::shared_ptr<class CommandMgr>& commandMgr, TextureUsage textureUsage)
 		{
 			std::filesystem::path filePath(filename);
 			if (!std::filesystem::exists(filePath))
@@ -638,14 +455,14 @@ namespace Fraple7
 
 				if (subresources.size() < textureResource->GetDesc().MipLevels)
 				{
-					GenerateMips(texture);
+					GenerateMips(texture, commandMgr);
 				}
 				s_TextureCache[filename] = textureResource.Get();
 			}
 		}
 
 
-		void Command::List::ResolveSubResource(Resource& dstRes, const Resource& srcRes, uint32_t dstSubResource, uint32_t srcSubResource)
+		void CommandList::ResolveSubResource(Resource& dstRes, const Resource& srcRes, uint32_t dstSubResource, uint32_t srcSubResource)
 		{
 			TransitionBarrier(dstRes, D3D12_RESOURCE_STATE_RESOLVE_DEST, dstSubResource);
 			TransitionBarrier(srcRes, D3D12_RESOURCE_STATE_RESOLVE_SOURCE, srcSubResource);
@@ -657,7 +474,7 @@ namespace Fraple7
 			TrackResource(dstRes);
 		}
 
-		void Command::List::ClearTexture(const Texture& texture, const float clearColor[4])
+		void CommandList::ClearTexture(const Texture& texture, const float clearColor[4])
 		{
 			TransitionBarrier(texture, D3D12_RESOURCE_STATE_RENDER_TARGET);
 			m_CommandList->ClearRenderTargetView(texture.GetRenderTargetView(), clearColor, 0, nullptr);
@@ -665,29 +482,48 @@ namespace Fraple7
 			TrackResource(texture);
 		}
 
-		void Command::List::ClearDepthStencilTexture(const Texture& texture, D3D12_CLEAR_FLAGS clearFlags, float depth, uint8_t stencil)
+		void CommandList::ClearDepthStencilTexture(const Texture& texture, D3D12_CLEAR_FLAGS clearFlags, float depth, uint8_t stencil)
 		{
+			TransitionBarrier(texture, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			m_CommandList->ClearDepthStencilView(texture.GetDepthStencilView(), clearFlags, depth, stencil, 0, nullptr);
 		}
 
-		void Command::List::CopyVertexBuffer(VertexBuffer& vertexBuffer, size_t numVertices, size_t vertexStride, const void* vertexBufferData)
+		void CommandList::CopyVertexBuffer(VertexBuffer& vertexBuffer, size_t numVertices, size_t vertexStride, const void* vertexBufferData)
 		{
 			CopyBuffer(vertexBuffer, numVertices, vertexStride, vertexBufferData);
 		}
-		void Command::List::CopyIndexBuffer(IndexBuffer& indexBuffer, size_t numIndices, DXGI_FORMAT indexFormat, const void* indexBufferData)
+		void CommandList::CopyIndexBuffer(IndexBuffer& indexBuffer, size_t numIndices, DXGI_FORMAT indexFormat, const void* indexBufferData)
 		{
 			size_t indexSizeInBytes = indexFormat == DXGI_FORMAT_R16_UINT ? 2 : 4;
 			CopyBuffer(indexBuffer, numIndices, indexSizeInBytes, indexBufferData);
 		}
 
-		void Command::List::SetDynamicVertexBuffer(uint32_t slot, size_t numVertices, size_t vertexSize, const void* vertexBufferData)
+		void CommandList::SetDynamicVertexBuffer(uint32_t slot, size_t numVertices, size_t vertexSize, const void* vertexBufferData)
 		{
+			size_t bufferSize = numVertices * vertexSize;
+			auto heapAllocation = m_UploadBuffer->Allocate(bufferSize, vertexSize);
+
+			memcpy(heapAllocation.CPU, vertexBufferData, bufferSize);
+
+			D3D12_VERTEX_BUFFER_VIEW vertexBufferView = { };
+			vertexBufferView.BufferLocation = heapAllocation.GPU;
+			vertexBufferView.SizeInBytes = static_cast<UINT>(bufferSize);
+			vertexBufferView.StrideInBytes = static_cast<UINT>(vertexSize);
+
+			m_CommandList->IASetVertexBuffers(slot, 1, &vertexBufferView);
 		}
 
-		void Command::List::SetIndexBuffer(const IndexBuffer& indexBuffer)
+		void CommandList::SetIndexBuffer(const IndexBuffer& indexBuffer)
 		{
+			TransitionBarrier(indexBuffer, D3D12_RESOURCE_STATE_INDEX_BUFFER);
+
+			auto& indexBufferView = indexBuffer.GetIndexBufferView();
+
+			m_CommandList->IASetIndexBuffer(&indexBufferView);
+			TrackResource(indexBuffer);
 		}
 
-		void Command::List::SetDynamicIndexBuffer(size_t numIndices, DXGI_FORMAT indexFormat, const void* IndexBufferData)
+		void CommandList::SetDynamicIndexBuffer(size_t numIndices, DXGI_FORMAT indexFormat, const void* IndexBufferData)
 		{
 			size_t indexSizeInBytes = indexFormat == DXGI_FORMAT_R16_UINT ? 2 : 4;
 			size_t bufferSize = numIndices * indexSizeInBytes;
@@ -703,11 +539,18 @@ namespace Fraple7
 			m_CommandList->IASetIndexBuffer(&indexBufferView);
 		}
 
-		void Command::List::SetGraphicsDnyamicStrucuredBuffer(uint32_t slot, size_t numElements, size_t elementSize, const void* bufferData)
+		void CommandList::SetGraphicsDynamicStructuredBuffer(uint32_t slot, size_t numElements, size_t elementSize, const void* bufferData)
 		{
+			size_t bufferSize = numElements * elementSize;
+
+			auto heapAllocation = m_UploadBuffer->Allocate(bufferSize, elementSize);
+
+			memcpy(heapAllocation.CPU, bufferData, bufferSize);
+
+			m_CommandList->SetGraphicsRootShaderResourceView(slot, heapAllocation.GPU);
 		}
 
-		void Command::List::GenerateMips_UAV(Texture& texture, DXGI_FORMAT format)
+		void CommandList::GenerateMips_UAV(Texture& texture, DXGI_FORMAT format)
 		{
 			if (!m_GenerateMipsPSO)
 			{
@@ -749,7 +592,7 @@ namespace Fraple7
 				dstWidth = std::max<DWORD>(1, dstWidth);
 				dstHeight = std::max<DWORD>(1, dstHeight);
 
-				generateMipsCB.SrcMipLevel  = srcMip;
+				generateMipsCB.SrcMipLevel = srcMip;
 				generateMipsCB.NumMipLevels = mipCount;
 				generateMipsCB.TexelSize.x = 1.0f / (float)dstWidth;
 				generateMipsCB.TexelSize.y = 1.0f / (float)dstHeight;
@@ -770,16 +613,99 @@ namespace Fraple7
 				{
 					m_DynamicDescriptorHeap[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]->StageDescriptors(GenerateMipsPSO::GenerateMips::_OutMip, mipCount, 4 - mipCount, m_GenerateMipsPSO->GetDefaultUAV());
 				}
-				
+
 				Dispatch(Math::DivideByMultiple(dstWidth, 8), Math::DivideByMultiple(dstHeight, 8));
 				UAVBarrier(texture);
 				srcMip += mipCount;
 			}
 		}
-		void Command::List::GenerateMips(Texture& texture)
+		void CommandList::GenerateMips(Texture& texture, const std::shared_ptr<CommandMgr>& commandMgr)
 		{
+			if (m_CommandListType == D3D12_COMMAND_LIST_TYPE_COPY)
+			{
+				if (!m_ComputeCommandList) {
+					m_ComputeCommandList = commandMgr->GetCommandQueue(D3D12_COMMAND_LIST_TYPE_COMPUTE)->GetCommandListClass();
+				}
+				m_ComputeCommandList->GenerateMips(texture, commandMgr);
+				return;
+			}
+			auto resource = texture.GetD3D12Resource();
+
+			if (!resource)
+			{
+				return;
+			}
+			auto resourceDesc = resource->GetDesc();
+
+			if (resourceDesc.MipLevels == 1)
+			{
+				return;
+			}
+			if (resourceDesc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D ||
+				resourceDesc.DepthOrArraySize != 1 ||
+				resourceDesc.SampleDesc.Count > 1)
+			{
+				throw std::exception("GenerateMips is only supported for non-multi sampled 2D Textures.");
+			}
+
+			ComPtr<ID3D12Resource> uavResource = resource;
+			ComPtr<ID3D12Resource> aliasResource;
+
+			if (!texture.CheckUAVSupport() || (resourceDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == 0)
+			{
+				auto aliasDesc = resourceDesc;
+
+				aliasDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+				aliasDesc.Flags &= ~(D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
+				auto uavDesc = aliasDesc;
+				uavDesc.Format = Texture::GetUAVCompatableFormat(resourceDesc.Format);
+
+				D3D12_RESOURCE_DESC resourceDescs[] =
+				{
+					aliasDesc,
+					uavDesc
+				};
+
+				auto allocationInfo = Device::GetDevice()->GetResourceAllocationInfo(0, _countof(resourceDescs), resourceDescs);
+
+				D3D12_HEAP_DESC heapDesc = { };
+				heapDesc.SizeInBytes = allocationInfo.SizeInBytes;
+				heapDesc.Alignment = allocationInfo.Alignment;
+				heapDesc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES;
+				heapDesc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+				heapDesc.Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+				heapDesc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+				ComPtr<ID3D12Heap>heap;
+				Device::GetDevice()->CreateHeap(&heapDesc, IID_PPV_ARGS(&heap)) >> statusCode;
+
+				TrackResource(heap);
+
+				Device::GetDevice()->CreatePlacedResource(heap.Get(), 0, &aliasDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&aliasResource)) >> statusCode;
+
+				ResourceStateTracker::AddGlobalResourceState(aliasResource.Get(), D3D12_RESOURCE_STATE_COMMON);
+				TrackResource(aliasResource);
+
+				Device::GetDevice()->CreatePlacedResource(heap.Get(), 0, &uavDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&uavResource)) >> statusCode;
+
+				ResourceStateTracker::AddGlobalResourceState(uavResource.Get(), D3D12_RESOURCE_STATE_COMMON);
+
+				TrackResource(uavResource);
+				AliasingBarrier(nullptr, aliasResource);
+				CopyResource(aliasResource, resource);
+				AliasingBarrier(aliasResource, uavResource);
+			}
+			Texture texUAV = Texture(uavResource, texture.GetTextureUsage());
+			GenerateMips_UAV(texUAV, resourceDesc.Format);
+
+			if (aliasResource)
+			{
+				AliasingBarrier(uavResource, aliasResource);
+				CopyResource(resource, aliasResource);
+			}
 		}
-		void Command::List::PanoToCubeMap(Texture& cubeMapTexture, const Texture& panoTexture, const std::shared_ptr<CommandMgr>& commandMgr)
+		void CommandList::PanoToCubeMap(Texture& cubeMapTexture, const Texture& panoTexture, const std::shared_ptr<CommandMgr>& commandMgr)
 		{
 			if (m_CommandListType == D3D12_COMMAND_LIST_TYPE_COPY)
 			{
@@ -804,7 +730,7 @@ namespace Fraple7
 
 			Texture stagingTexture(stagingResource);
 
-			if ((cubeMapDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == 0 )
+			if ((cubeMapDesc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == 0)
 			{
 				auto stagingDesc = cubeMapDesc;
 				stagingDesc.Format = Texture::GetUAVCompatableFormat(cubeMapDesc.Format);
@@ -866,10 +792,32 @@ namespace Fraple7
 				CopyResource(cubeMapTexture, stagingTexture);
 			}
 		}
-		void Command::List::CopyTextureSubResource(Texture& texture, uint32_t firstSubResource, uint32_t numSubResources, D3D12_SUBRESOURCE_DATA* subResourceData)
+		void CommandList::CopyTextureSubResource(Texture& texture, uint32_t firstSubResource, uint32_t numSubResources, D3D12_SUBRESOURCE_DATA* subResourceData)
 		{
+			auto destinationResource = texture.GetD3D12Resource();
+
+			if (destinationResource)
+			{
+				TransitionBarrier(texture, D3D12_RESOURCE_STATE_COPY_DEST);
+				FlushResourceBarriers();
+
+				UINT64 requiredSize = GetRequiredIntermediateSize(destinationResource.Get(), firstSubResource, numSubResources);
+
+				ComPtr<ID3D12Resource> intermediateResource;
+				auto properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+				auto buffer = CD3DX12_RESOURCE_DESC::Buffer(requiredSize);
+				Device::GetDevice()->CreateCommittedResource(&properties,
+					D3D12_HEAP_FLAG_NONE,
+					&buffer,
+					D3D12_RESOURCE_STATE_GENERIC_READ,
+					nullptr,
+					IID_PPV_ARGS(&intermediateResource)) >> statusCode;
+				UpdateSubresources(m_CommandList.Get(), destinationResource.Get(), intermediateResource.Get(), 0, firstSubResource, numSubResources, subResourceData);
+				TrackResource(intermediateResource);
+				TrackResource(destinationResource);
+			}
 		}
-		void Command::List::CopyBuffer(Buffer& buffer, size_t numElements, size_t elementSize, const void* bufferData, D3D12_RESOURCE_FLAGS flags)
+		void CommandList::CopyBuffer(Buffer& buffer, size_t numElements, size_t elementSize, const void* bufferData, D3D12_RESOURCE_FLAGS flags)
 		{
 			size_t bufferSize = numElements * elementSize;
 
@@ -900,7 +848,7 @@ namespace Fraple7
 						D3D12_RESOURCE_STATE_GENERIC_READ,
 						nullptr,
 						IID_PPV_ARGS(&uploadResource)) >> statusCode;
-						
+
 					D3D12_SUBRESOURCE_DATA subResourceData = {};
 					subResourceData.pData = bufferData;
 					subResourceData.RowPitch = bufferSize;

@@ -2,6 +2,7 @@
 #include "SwapChain.h"
 #include "Device.h"
 #include "Studio/Platform/Windows/Window.h"
+#include "CommandQueue.h"
 
 namespace Fraple7
 {
@@ -85,7 +86,7 @@ namespace Fraple7
 			Status = FPL_SUCCESS
 			return Status;
 		}
-		SwapChain::SwapChain(std::shared_ptr<Studio::Window> window, std::shared_ptr<Device> device, uint32_t bufferCount, const std::shared_ptr<Command::QueueDx>& commandQueue)
+		SwapChain::SwapChain(std::shared_ptr<Studio::Window> window, std::shared_ptr<Device> device, uint32_t bufferCount, const std::shared_ptr<CommandQueue>& commandQueue)
 			: m_Window(std::dynamic_pointer_cast<Studio::WinWindow>(window)), m_Device(device), m_BufferCount(bufferCount), m_CommandQueue(commandQueue)
 		{
 			m_BackBuffers.resize(bufferCount);

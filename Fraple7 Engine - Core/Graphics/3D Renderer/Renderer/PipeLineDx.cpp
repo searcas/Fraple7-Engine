@@ -1,7 +1,18 @@
 #include "pch.h"
 #include "PipeLineDx.h"
-#include "Utilities/Common/Common.h"
 #include "Studio/Platform/Windows/Window.h"
+#include "Graphics/3D Renderer/API/DirectX-12/SwapChain.h"
+#include "Graphics/3D Renderer/API/DirectX-12/Memory/DepthBuffer.h"
+#include "Graphics/3D Renderer/API/DirectX-12/Memory/VertexBuffer.h"
+#include "Graphics/3D Renderer/API/DirectX-12/Memory/IndexBuffer.h"
+
+#include "Graphics/3D Renderer/API/DirectX-12/CommandList.h"
+#include "Graphics/3D Renderer/API/DirectX-12/CommandQueue.h"
+#include "Graphics/3D Renderer/API/DirectX-12/CommandMgr.h"
+#include "Graphics/3D Renderer/API/DirectX-12/PipelineStateObject.h"
+#include "Graphics/3D Renderer/Renderer/View/Projection.h"
+
+
 namespace Fraple7
 {
 	namespace Core
@@ -25,6 +36,9 @@ namespace Fraple7
 			m_FenceValues.resize(m_SwapChain->GetBufferCount());
 
 		}
+		const CD3DX12_CPU_DESCRIPTOR_HANDLE& PipeLineDx::GetDSVHandle() 
+		{ return m_DepthBuffer->GetDSVHandle(); }
+
 		PipeLineDx::~PipeLineDx()
 		{
 			m_CommandMgr->UnloadAll();

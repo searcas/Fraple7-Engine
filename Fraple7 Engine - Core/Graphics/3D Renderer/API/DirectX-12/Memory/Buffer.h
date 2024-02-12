@@ -12,6 +12,8 @@ namespace Fraple7
 				size_t numElements, size_t elementSize,
 				const std::wstring& name = L"");
 			virtual void CreateViews(size_t numeElements, size_t elementSize) = 0;
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE GetShaderResourceView(const D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc = nullptr) const override;
+			virtual D3D12_CPU_DESCRIPTOR_HANDLE GetUnorderedAccessView(const D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc = nullptr) const override;
 		};
 	}
 }

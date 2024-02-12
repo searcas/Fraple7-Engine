@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "ResourceStateTracker.h"
 #include "Resource.h"
-#include "Command.h"
+#include "CommandList.h"
 
 namespace Fraple7
 {
@@ -86,7 +86,7 @@ namespace Fraple7
 			ID3D12Resource* pResourceAfter = resourceAfter != nullptr ? resourceAfter->GetD3D12Resource().Get(): nullptr;
 			ResourceBarrier(CD3DX12_RESOURCE_BARRIER::Aliasing(pResourceBefore, pResourceAfter));
 		}
-		void ResourceStateTracker::FlushResourceBarriers(Command::List& commandList)
+		void ResourceStateTracker::FlushResourceBarriers(CommandList& commandList)
 		{
 			UINT numBarriers = static_cast<UINT>(m_ResourceBarriers.size());
 			if (numBarriers > 0)
@@ -95,7 +95,7 @@ namespace Fraple7
 				m_ResourceBarriers.clear();
 			}
 		}
-		uint32_t ResourceStateTracker::FlushPendingResourceBarriers(Command::List& list)
+		uint32_t ResourceStateTracker::FlushPendingResourceBarriers(CommandList& list)
 		{
 			assert(s_IsLocked);
 

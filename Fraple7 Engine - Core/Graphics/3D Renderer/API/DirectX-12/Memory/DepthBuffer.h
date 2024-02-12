@@ -1,12 +1,12 @@
 #pragma once
 #include "Utilities/Common/Common.h"
 #include "directx/d3dx12.h"
-#include "Command.h"
 
 namespace Fraple7
 {
 	namespace Core
 	{
+		class CommandMgr;
 		class DepthBuffer
 		{
 		public:

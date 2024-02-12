@@ -17,6 +17,5 @@ namespace Fraple7
 			DirectX::XMMATRIX _mProjectionView{};
 			std::shared_ptr<Studio::WinWindow> m_Window;
 		};
-
 	}
 }
